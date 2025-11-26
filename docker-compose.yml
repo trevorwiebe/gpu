@@ -1,0 +1,39 @@
+
+services:
+  # Central router
+  router:
+    build:
+      context: .
+      dockerfile: router/Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - gpu-net
+    environment:
+      - LOG_LEVEL=INFO
+
+  # GPU Node (requires NVIDIA Docker runtime)
+  node:
+    build:
+      context: .
+      dockerfile: node/Dockerfile
+    networks:
+      - gpu-net
+    environment:
+      - HUB_URL=ws://hub:8000/ws
+      - NODE_ID=node_001
+      - MODEL_PATH=/models/llama-3.1-8b
+    volumes:
+      # Mount your model directory
+      - ./models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  gpu-net:
+    driver: bridge
