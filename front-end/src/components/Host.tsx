@@ -1,5 +1,9 @@
+import ModelList from './ModelList'
+
 export default function Host(){
     return (
-        <div>I'm a Host</div>
+        <>
+            <ModelList/>
+        </>
     )
 }
