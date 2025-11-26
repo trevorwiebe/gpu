@@ -1,19 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
 import { fetchModels } from '../thunks/fetchModels';
 
-interface Model {
-    id: string;
-    name: string;
-}
-
-interface ModelsState {
-    data: Model[];
-    isLoading: boolean;
-    error: string | null;
-}
-
-const initialState: ModelsState = {
+const initialState = {
     data: [],
     isLoading: false,
     error: null
@@ -29,7 +17,7 @@ const modelsSlice = createSlice({
                 state.isLoading = true;
                 state.error = null;
             })
-            .addCase(fetchModels.fulfilled, (state, action: PayloadAction<Model[]>) => {
+            .addCase(fetchModels.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.data = action.payload;
                 state.error = null;

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector, fetchModels } from '../store'
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchModels } from '../store'
 
 export default function ModelsList(){
-  const dispatch = useAppDispatch();
-  const { data: models, isLoading, error } = useAppSelector(state => state.models);
+  const dispatch = useDispatch();
+  const { data: models, isLoading, error } = useSelector(state => state.models);
 
   useEffect(() =>{
     dispatch(fetchModels())
