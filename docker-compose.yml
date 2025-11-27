@@ -3,36 +3,31 @@ services:
   # Central router
   router:
     build:
-      context: .
-      dockerfile: router/Dockerfile
+      context: ./router
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     networks:
       - gpu-net
     environment:
       - LOG_LEVEL=INFO
+      - NODE_URL=http://node:8005
+      - NODE_API_KEY=secure-router-key-123
+    depends_on:
+      - node
 
-  # GPU Node (requires NVIDIA Docker runtime)
+  # SmolLM2 Node Service
   node:
     build:
-      context: .
-      dockerfile: node/Dockerfile
+      context: ./node
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
     networks:
       - gpu-net
     environment:
-      - HUB_URL=ws://hub:8000/ws
-      - NODE_ID=node_001
-      - MODEL_PATH=/models/llama-3.1-8b
-    volumes:
-      # Mount your model directory
-      - ./models:/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct
+      - ROUTER_API_KEY=secure-router-key-123
 
 networks:
   gpu-net:

@@ -1,116 +1,126 @@
 #!/usr/bin/env python3
 """
-Minimal Central Router - Prototype Version
-Just route requests to nodes, that's it
+Minimal Central Router - HTTP Version
+Route requests to nodes via HTTP API
 """
 
-import asyncio
-import json
-from typing import Dict
-from fastapi import FastAPI, WebSocket
+import os
+import httpx
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(title="GPU Router", version="1.0.0")
 
-# Simple in-memory storage
-nodes: Dict[str, WebSocket] = {}  # node_id -> websocket
-pending_requests: Dict[str, asyncio.Future] = {}  # request_id -> future
-request_counter = 0
+# Configuration
+NODE_URL = os.getenv("NODE_URL", "http://node:8005")
+NODE_API_KEY = os.getenv("NODE_API_KEY", "secure-router-key-123")
+
+# Pydantic models
+class CompletionRequest(BaseModel):
+    prompt: str
+    model: str = "SmolLM2-135M-Instruct"
+    max_tokens: int = 512
+    temperature: float = 0.7
+
+class CompletionResponse(BaseModel):
+    id: str
+    object: str = "text_completion"
+    model: str
+    choices: list
+    usage: dict
 
 
-@app.websocket("/ws")
-async def node_websocket(websocket: WebSocket):
-    """Nodes connect here"""
-    await websocket.accept()
-    node_id = None
-    
+@app.post("/completions")
+async def completions(request: CompletionRequest):
+    """Route completion requests to node"""
     try:
-        # Wait for registration
-        data = await websocket.receive_json()
-        node_id = data["node_id"]
-        nodes[node_id] = websocket
-        print(f"Node {node_id} connected")
+        # Prepare headers with API key
+        headers = {"X-API-Key": NODE_API_KEY}
         
-        # Listen for responses
-        while True:
-            msg = await websocket.receive_json()
+        # Prepare request payload for node
+        node_request = {
+            "prompt": request.prompt,
+            "max_new_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "do_sample": True
+        }
+        
+        # Make request to node
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{NODE_URL}/generate",
+                json=node_request,
+                headers=headers,
+                timeout=60.0
+            )
             
-            if msg["type"] == "inference_response":
-                request_id = msg["request_id"]
-                if request_id in pending_requests:
-                    pending_requests[request_id].set_result(msg)
-                    
-    except Exception as e:
-        print(f"Node {node_id} disconnected: {e}")
-    finally:
-        if node_id in nodes:
-            del nodes[node_id]
-
-
-@app.post("/v1/completions")
-async def completions(request: dict):
-    """Clients send requests here"""
-    global request_counter
-    
-    if not nodes:
-        return JSONResponse({"error": "No nodes available"}, status_code=503)
-    
-    # Pick first available node (no fancy routing)
-    node_id = list(nodes.keys())[0]
-    node_ws = nodes[node_id]
-    
-    # Create request
-    request_counter += 1
-    request_id = f"req_{request_counter}"
-    
-    # Create future to wait for response
-    future = asyncio.Future()
-    pending_requests[request_id] = future
-    
-    # Send to node
-    await node_ws.send_json({
-        "type": "inference_request",
-        "request_id": request_id,
-        "prompt": request["prompt"],
-        "parameters": {
-            "temperature": request.get("temperature", 0.7),
-            "max_tokens": request.get("max_tokens", 512),
-        }
-    })
-    
-    # Wait for response (with timeout)
-    try:
-        response = await asyncio.wait_for(future, timeout=60)
-        del pending_requests[request_id]
-        
-        return {
-            "id": request_id,
-            "object": "text_completion",
-            "model": request.get("model", "llama-3.1-8b"),
-            "choices": [{
-                "text": response["output"],
-                "index": 0,
-                "finish_reason": "stop"
-            }],
-            "usage": {
-                "completion_tokens": response.get("tokens", 0),
-                "total_tokens": response.get("tokens", 0)
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Node error: {response.text}"
+                )
+            
+            node_response = response.json()
+            
+            # Convert to OpenAI format
+            return {
+                "id": f"req_{hash(request.prompt) % 10000}",
+                "object": "text_completion",
+                "model": request.model,
+                "choices": [{
+                    "text": node_response["generated_text"],
+                    "index": 0,
+                    "finish_reason": "stop"
+                }],
+                "usage": {
+                    "completion_tokens": len(node_response["generated_text"].split()),
+                    "prompt_tokens": len(request.prompt.split()),
+                    "total_tokens": len(node_response["generated_text"].split()) + len(request.prompt.split())
+                }
             }
-        }
-        
-    except asyncio.TimeoutError:
-        del pending_requests[request_id]
-        return JSONResponse({"error": "Request timeout"}, status_code=504)
+            
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Node unavailable: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Router error: {str(e)}")
 
 
 @app.get("/health")
 async def health():
     """Health check"""
-    return {
-        "status": "healthy",
-        "nodes_connected": len(nodes)
-    }
+    try:
+        # Check node health
+        headers = {"X-API-Key": NODE_API_KEY}
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{NODE_URL}/health",
+                headers=headers,
+                timeout=10.0
+            )
+            
+            if response.status_code == 200:
+                node_health = response.json()
+                return {
+                    "status": "healthy",
+                    "node_status": node_health,
+                    "node_url": NODE_URL
+                }
+            else:
+                return {
+                    "status": "degraded",
+                    "node_status": "unreachable",
+                    "node_url": NODE_URL
+                }
+                
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "node_status": "error",
+            "error": str(e),
+            "node_url": NODE_URL
+        }
 
 
 if __name__ == "__main__":

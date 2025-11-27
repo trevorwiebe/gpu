@@ -2,10 +2,10 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-COPY router/pyproject.toml router/requirements.txt ./
+COPY pyproject.toml requirements.txt ./
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir wheels -r requirements.txt
 
-COPY router/src src
+COPY src src
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir wheels .
 
 FROM python:3.12-slim AS runner

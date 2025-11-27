@@ -1,46 +1,44 @@
-FROM nvidia/cuda:12.1.0-devel-ubuntu20.04
+FROM python:3.12-slim
 
-# Prevent interactive prompts during build
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct
 
-# Install Python and system dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3-pip \
     git \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Python 3.10 as default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
-RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
-
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Install PyTorch with CUDA support
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install vLLM and dependencies
-RUN pip install \
-    vllm \
-    websockets \
-    transformers \
-    accelerate
+# Install huggingface-cli
+RUN pip install huggingface_hub
 
-# Create working directory
+# Create models directory
+RUN mkdir -p /models/HuggingFaceTB/SmolLM2-135M-Instruct
+
+# Download SmolLM2-135M-Instruct model
+RUN huggingface-cli download HuggingFaceTB/SmolLM2-135M-Instruct --local-dir /models/HuggingFaceTB/SmolLM2-135M-Instruct
+
+# Create app directory
 WORKDIR /app
 
-# Copy the node service script
-COPY node/src/node_service.py /app/
+# Copy application code
+COPY app.py .
 
-# Environment variables (can be overridden at runtime)
-ENV HUB_URL=ws://host.docker.internal:8000/ws
-ENV NODE_ID=node_docker_1
-ENV MODEL_PATH=/models/llama-3.1-8b
+# Expose port
+EXPOSE 8005
 
-# Expose port (not really needed for client, but good practice)
-EXPOSE 8080
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8005/health || exit 1
 
-# Run the node service
-CMD ["python", "node_service.py"]
+# Run the application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8005"]
