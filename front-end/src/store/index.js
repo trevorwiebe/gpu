@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { modelsReducer } from './slices/modelsSlice'
 import { fetchModels } from './thunks/fetchModels'
+import { sortModels } from './slices/modelsSlice'
 
 export const store = configureStore({
     reducer: {
@@ -10,4 +11,4 @@ export const store = configureStore({
 
 export default store
 
-export { fetchModels }
+export { fetchModels, sortModels }

@@ -16,7 +16,7 @@ export default function NavBar() {
               key={item.name} 
               end
               className={({ isActive }) =>
-                `m-2 px-6 py-2 text-lg font-medium transition-colors duration-200 rounded-md  ${
+                `m-2 px-6 py-2 text-lg font-medium transition-colors duration-200 rounded-full ${
                   isActive
                     ? 'text-white bg-gray-700'
                     : 'text-black border-transparent hover:text-white hover:bg-gray-700'

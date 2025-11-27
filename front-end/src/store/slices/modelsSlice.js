@@ -3,6 +3,8 @@ import { fetchModels } from '../thunks/fetchModels';
 
 const initialState = {
     data: [],
+    sortBy: "",
+    sortOrder: "",
     isLoading: false,
     error: null
 };
@@ -10,7 +12,30 @@ const initialState = {
 const modelsSlice = createSlice({
     name: 'models',
     initialState,
-    reducers: {},
+    reducers: {
+        sortModels: (state, action) => {
+            const { sortBy } = action.payload;
+
+            const sortOrder = "desc";
+
+            state.sortBy = sortBy;
+            state.sortOrder = sortOrder;
+
+            state.data.sort((a, b) => {
+                const valueA = a[sortBy];
+                const valueB = b[sortBy];
+
+                if(sortOrder === 'asc'){
+                    return valueA - valueB
+                }else if(sortOrder === 'desc'){
+                   return valueB - valueA
+                }else{
+                    return 0
+                }
+                
+            });
+        }
+    },
     extraReducers(builder) {
         builder
             .addCase(fetchModels.pending, (state) => {
@@ -29,4 +54,5 @@ const modelsSlice = createSlice({
     }
 });
 
+export const { sortModels } = modelsSlice.actions;
 export const modelsReducer = modelsSlice.reducer;
