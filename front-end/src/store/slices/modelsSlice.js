@@ -3,8 +3,8 @@ import { fetchModels } from '../thunks/fetchModels';
 
 const initialState = {
     data: [],
-    sortBy: "",
-    sortOrder: "",
+    sortBy: "downloads",
+    sortOrder: "desc",
     isLoading: false,
     error: null
 };
@@ -31,10 +31,11 @@ const modelsSlice = createSlice({
             state.sortOrder = sortOrder;
 
             state.data.sort((a, b) => {
-                if(sortBy == "createdAt"){
-                    const valueA = a[sortBy];
-                    const valueB = b[sortBy];
 
+                const valueA = a[sortBy];
+                const valueB = b[sortBy];
+
+                if(sortBy == "createdAt"){
                     if(sortOrder == 'asc'){
                         return new Date(valueA) - new Date(valueB)
                     }else if(sortOrder == 'desc'){
@@ -43,9 +44,6 @@ const modelsSlice = createSlice({
                         return 0
                     }
                 }else{
-                    const valueA = a[sortBy];
-                    const valueB = b[sortBy];
-
                     if(sortOrder == 'asc'){
                         return valueA - valueB
                     }else if(sortOrder == 'desc'){
