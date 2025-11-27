@@ -5,7 +5,7 @@ Route requests to nodes via HTTP API
 """
 
 import os
-import httpx
+import httpx # type: ignore
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
