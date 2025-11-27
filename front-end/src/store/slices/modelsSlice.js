@@ -37,7 +37,7 @@ const modelsSlice = createSlice({
 
                 if(sortBy == "createdAt"){
                     if(sortOrder == 'asc'){
-                        return new Date(valueA) - new Date(valueB)
+                        return new Date(valueB) - new Date(valueA)
                     }else if(sortOrder == 'desc'){
                         return new Date(valueB) - new Date(valueA)
                     }else{
@@ -45,9 +45,9 @@ const modelsSlice = createSlice({
                     }
                 }else{
                     if(sortOrder == 'asc'){
-                        return valueA - valueB
-                    }else if(sortOrder == 'desc'){
                         return valueB - valueA
+                    }else if(sortOrder == 'desc'){
+                        return valueA - valueB
                     }else{
                         return 0
                     }
