@@ -16,23 +16,44 @@ const modelsSlice = createSlice({
         sortModels: (state, action) => {
             const { sortBy } = action.payload;
 
-            const sortOrder = "desc";
+            let sortOrder = state.sortOrder
+            if(sortBy == state.sortBy){
+                if(sortOrder == "asc"){
+                    sortOrder = "desc"
+                }else{
+                    sortOrder = "asc"
+                }
+            }else{
+                sortOrder = "asc"
+            }
 
             state.sortBy = sortBy;
             state.sortOrder = sortOrder;
 
             state.data.sort((a, b) => {
-                const valueA = a[sortBy];
-                const valueB = b[sortBy];
+                if(sortBy == "createdAt"){
+                    const valueA = a[sortBy];
+                    const valueB = b[sortBy];
 
-                if(sortOrder === 'asc'){
-                    return valueA - valueB
-                }else if(sortOrder === 'desc'){
-                   return valueB - valueA
+                    if(sortOrder == 'asc'){
+                        return new Date(valueA) - new Date(valueB)
+                    }else if(sortOrder == 'desc'){
+                        return new Date(valueB) - new Date(valueA)
+                    }else{
+                        return 0
+                    }
                 }else{
-                    return 0
+                    const valueA = a[sortBy];
+                    const valueB = b[sortBy];
+
+                    if(sortOrder == 'asc'){
+                        return valueA - valueB
+                    }else if(sortOrder == 'desc'){
+                        return valueB - valueA
+                    }else{
+                        return 0
+                    }
                 }
-                
             });
         }
     },
