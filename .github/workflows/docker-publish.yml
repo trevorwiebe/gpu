@@ -1,0 +1,71 @@
+name: Publish Node to Docker Hub
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image version tag (e.g., latest, v1.0.0)'
+        required: false
+        default: 'latest'
+      model_tag:
+        description: 'Model-specific tag (e.g., smolllm2-135m, llama-3.1-8b)'
+        required: false
+        default: ''
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_HUB_USERNAME }}/node
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            ${{ github.event.inputs.model_tag && format('type=raw,value={0}', github.event.inputs.model_tag) || '' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate summary
+        run: |
+          echo "## 🐳 Docker Image Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ secrets.DOCKER_HUB_USERNAME }}/node" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ github.event.inputs.model_tag }}" ]; then
+            echo "**Model Tag:** ${{ github.event.inputs.model_tag }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Deployment Commands" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# Pull the image" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Run on Vast.ai" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -p 8005:8005 -e ROUTER_API_KEY=your-key ${{ secrets.DOCKER_HUB_USERNAME }}/node:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
