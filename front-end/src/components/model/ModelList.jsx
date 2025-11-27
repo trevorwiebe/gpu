@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchModels } from '../store'
+import { fetchModels } from '../../store'
+
+import ModelItem from './ModelItem';
+import Loader from '../small/Loader';
+import Error from '../small/Error';
 
 export default function ModelsList(){
   const dispatch = useDispatch();
@@ -10,16 +14,15 @@ export default function ModelsList(){
     dispatch(fetchModels())
   }, [dispatch])
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (isLoading) return <Loader/>
+  if (error) return <Error text={error} />;
 
   return (
     <div>
-      <h2>Models</h2>
       <ul>
         {models.map(model => (
-          <li key={model.id}>
-            {model.id} - {model.name}
+          <li key={model._id}>
+            <ModelItem name={model}/>
           </li>
         ))}
       </ul>

@@ -7,7 +7,7 @@ const navigation = [
 
 export default function NavBar() {
   return (
-    <div className="bg-gray-300 shadow-lg">
+    <div className="sticky top-0 z-50 bg-gray-300 shadow-lg">
       <nav className="max-w-6xl mx-auto px-4">
         <div className="flex justify-center space-x-8">
           {navigation.map((item) => (
