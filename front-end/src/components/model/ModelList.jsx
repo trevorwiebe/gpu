@@ -11,7 +11,9 @@ export default function ModelsList(){
   const { data: models, isLoading, error } = useSelector(state => state.models);
 
   useEffect(() =>{
-    dispatch(fetchModels())
+    if(!models.length){
+      dispatch(fetchModels())
+    }
   }, [dispatch])
 
   if (isLoading) return <Loader/>
