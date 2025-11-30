@@ -1,0 +1,43 @@
+// Hugging Face API Model interface
+export interface HuggingFaceModel {
+  id: string;
+  modelId: string;
+  author: string;
+  sha: string;
+  lastModified: string;
+  tags: string[];
+  pipeline_tag: string;
+  siblings: Array<{
+    rfilename: string;
+    [key: string]: unknown;
+  }>;
+  private: boolean;
+  gated: string | false;
+  downloads: number;
+  likes: number;
+  library_name: string;
+  createdAt: string;
+  cardData?: {
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// Redux State interface
+export interface ModelsState {
+  data: HuggingFaceModel[];
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Sort action payload
+export interface SortPayload {
+  sortBy: string;
+}
+
+// Root State interface
+export interface RootState {
+  models: ModelsState;
+}

@@ -1,4 +1,10 @@
-export default function SortChip({active, label, onClick}){
+interface SortChipProps {
+    active: boolean;
+    label: string;
+    onClick: () => void;
+}
+
+export default function SortChip({active, label, onClick}: SortChipProps) {
 
     const baseStyles = 'my-1 px-4 py-1 rounded-full hover:shadow-lg duration-300';
     

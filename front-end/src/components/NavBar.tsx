@@ -1,6 +1,11 @@
 import { NavLink } from "react-router"
 
-const navigation = [
+interface NavigationItem {
+  name: string;
+  href: string;
+}
+
+const navigation: NavigationItem[] = [
   { name: 'Host', href: 'host' },
   { name: 'Client', href: 'client' },
 ]

@@ -1,7 +1,8 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { fetchModels } from '../thunks/fetchModels';
+import { ModelsState, SortPayload } from '../../types';
 
-const initialState = {
+const initialState: ModelsState = {
     data: [],
     sortBy: "downloads",
     sortOrder: "desc",
@@ -13,7 +14,7 @@ const modelsSlice = createSlice({
     name: 'models',
     initialState,
     reducers: {
-        sortModels: (state, action) => {
+        sortModels: (state, action: PayloadAction<SortPayload>) => {
             const { sortBy } = action.payload;
 
             let sortOrder = state.sortOrder
@@ -32,22 +33,22 @@ const modelsSlice = createSlice({
 
             state.data.sort((a, b) => {
 
-                const valueA = a[sortBy];
-                const valueB = b[sortBy];
+                const valueA = a[sortBy as keyof typeof a];
+                const valueB = b[sortBy as keyof typeof b];
 
                 if(sortBy == "createdAt"){
                     if(sortOrder == 'asc'){
-                        return new Date(valueB) - new Date(valueA)
+                        return new Date(valueB as string).getTime() - new Date(valueA as string).getTime()
                     }else if(sortOrder == 'desc'){
-                        return new Date(valueA) - new Date(valueB)
+                        return new Date(valueA as string).getTime() - new Date(valueB as string).getTime()
                     }else{
                         return 0
                     }
                 }else{
                     if(sortOrder == 'asc'){
-                        return valueB - valueA
+                        return (valueB as number) - (valueA as number)
                     }else if(sortOrder == 'desc'){
-                        return valueA - valueB
+                        return (valueA as number) - (valueB as number)
                     }else{
                         return 0
                     }

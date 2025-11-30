@@ -1,4 +1,4 @@
-export default function Loader(){
+export default function Loader() {
     return (
         <div className="m-10">
             <p className="text-center text-lg my-5">Loading...</p>

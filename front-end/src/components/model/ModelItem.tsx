@@ -1,8 +1,13 @@
 import {numberFormatter} from '../../utils/numberFormat'
 import {dateFormatter} from '../../utils/dateFormat'
 import Chip from '../Chip';
+import { HuggingFaceModel } from '../../types';
 
-export default function ModelItem(props) {
+interface ModelItemProps {
+    name: HuggingFaceModel;
+}
+
+export default function ModelItem(props: ModelItemProps) {
 
     const {id, downloads, likes, createdAt} = props.name;
 
