@@ -1,18 +1,29 @@
-FROM python:3.12-slim
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct
+    MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct \
+    CUDA_VISIBLE_DEVICES=0
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
     git \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Upgrade pip
 RUN pip install --upgrade pip
+
+# Install PyTorch with CUDA support
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .

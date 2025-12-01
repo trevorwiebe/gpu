@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple SmolLM2 Server - Apple Silicon Optimized
-FastAPI server that serves SmolLM2-135M-Instruct model
+Generic LLM Node Server - GPU Optimized
+FastAPI server that serves LLM models with automatic GPU detection
 """
 
 import os
@@ -14,9 +14,10 @@ from typing import Optional
 import uvicorn
 
 # Configuration
-MODEL_NAME = "HuggingFaceTB/SmolLM2-135M-Instruct"
+MODEL_NAME = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-135M-Instruct")
 MODEL_PATH = os.getenv("MODEL_PATH", f"/models/{MODEL_NAME}")
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
+DEVICE_OVERRIDE = os.getenv("DEVICE_OVERRIDE", None)
 
 # Pydantic models
 class GenerateRequest(BaseModel):
@@ -65,46 +66,76 @@ model = None
 generator = None
 
 def get_device():
-    """Detect the best available device"""
+    """Detect the best available device with fallback"""
+    if DEVICE_OVERRIDE:
+        print(f"Using device override: {DEVICE_OVERRIDE}")
+        return DEVICE_OVERRIDE
+    
+    if torch.cuda.is_available():
+        device_count = torch.cuda.device_count()
+        if device_count > 0:
+            print(f"GPU detected: {device_count} CUDA devices")
+            return "cuda"
+    
     if torch.backends.mps.is_available():
+        print("MPS (Apple Silicon) detected")
         return "mps"
-    elif torch.cuda.is_available():
-        return "cuda"
-    else:
-        return "cpu"
+    
+    print("No GPU detected, using CPU")
+    return "cpu"
 
 def load_model():
-    """Load the SmolLM2 model and tokenizer"""
+    """Load the LLM model and tokenizer with device optimization"""
     global tokenizer, model, generator
     
-    print(f"Loading model {MODEL_NAME}...")
-    print(f"Using device: {get_device()}")
-    
-    # Load tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_NAME,
-        torch_dtype=torch.float16 if get_device() != "cpu" else torch.float32,
-        device_map="auto" if get_device() != "cpu" else None
-    )
-    
-    # Create generation pipeline
     device = get_device()
-    if device == "cpu":
+    print(f"Loading model {MODEL_NAME}...")
+    print(f"Using device: {device}")
+    
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    
+    # Load model with device-specific optimizations
+    if device == "cuda":
+        print("Loading model with CUDA optimizations...")
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            low_cpu_mem_usage=True
+        )
+        generator = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer
+        )
+    elif device == "mps":
+        print("Loading model with MPS optimizations...")
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            torch_dtype=torch.float16,
+            device_map="auto"
+        )
+        generator = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer
+        )
+    else:
+        print("Loading model for CPU...")
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            torch_dtype=torch.float32
+        )
         generator = pipeline(
             "text-generation",
             model=model,
             tokenizer=tokenizer,
             device=device
         )
-    else:
-        generator = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer
-        )
     
     print("Model loaded successfully!")
+    print(f"Model device: {model.device}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -131,9 +162,22 @@ async def health():
         "model_loaded": generator is not None
     }
 
+@app.get("/device")
+async def device_info():
+    """Device information endpoint"""
+    device = get_device()
+    return {
+        "device": device,
+        "cuda_available": torch.cuda.is_available(),
+        "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "mps_available": torch.backends.mps.is_available(),
+        "current_device": str(model.device) if model else None,
+        "device_override": DEVICE_OVERRIDE
+    }
+
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_text(request: GenerateRequest):
-    """Generate text using SmolLM2"""
+    """Generate text using LLM"""
     if generator is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
@@ -144,7 +188,7 @@ async def generate_text(request: GenerateRequest):
             max_new_tokens=request.max_new_tokens,
             temperature=request.temperature,
             do_sample=request.do_sample,
-            pad_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.eos_token_id if tokenizer else None,
             return_full_text=False
         )
         
