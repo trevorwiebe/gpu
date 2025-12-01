@@ -9,8 +9,10 @@ interface ModelItemProps {
 
 export default function ModelItem(props: ModelItemProps) {
 
-    const {id, downloads, likes, createdAt} = props.name;
+    const {_id, id, downloads, likes, createdAt} = props.name;
 
+    console.log(_id, id);
+    
     return (
         <div className="rounded-md shadow-sm p-4 m-2">
             <p className="mb-2">{id}</p>

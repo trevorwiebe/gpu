@@ -1,5 +1,6 @@
 // Hugging Face API Model interface
 export interface HuggingFaceModel {
+  _id: string;
   id: string;
   modelId: string;
   author: string;
