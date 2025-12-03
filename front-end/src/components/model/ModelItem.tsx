@@ -1,11 +1,11 @@
 import {numberFormatter} from '../../utils/numberFormat'
 import {dateFormatter} from '../../utils/dateFormat'
 import Chip from '../Chip';
-import { HuggingFaceModel } from '../../types';
+import { Model } from '../../types';
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 
 interface ModelItemProps {
-    name: HuggingFaceModel;
+    name: Model;
     authenticated: Boolean | undefined
 }
 

@@ -1,5 +1,5 @@
 // Hugging Face API Model interface
-export interface HuggingFaceModel {
+export interface Model {
   _id: string;
   id: string;
   modelId: string;
@@ -25,12 +25,9 @@ export interface HuggingFaceModel {
 }
 
 // Redux State interface
-export interface ModelsState {
-  data: HuggingFaceModel[];
+export interface ModelSortState {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
-  isLoading: boolean;
-  error: string | null;
 }
 
 // Sort action payload
@@ -40,5 +37,5 @@ export interface SortPayload {
 
 // Root State interface
 export interface RootState {
-  models: ModelsState;
+  modelsSort: ModelSortState;
 }

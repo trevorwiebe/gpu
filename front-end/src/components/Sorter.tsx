@@ -1,17 +1,16 @@
 import { useDispatch, useSelector } from 'react-redux'
-import { sortModels } from '../store'
-import { RootState } from '../types'
+import { RootState, sortModels } from '../store';
 
 import SortChip from './SortChip'
 
 export default function Sorter() {
 
     const dispatch = useDispatch()
-
-    const { sortBy } = useSelector((state: RootState) => state.models)
-
+    
+    const { sortBy } = useSelector((state: RootState) => state.modelsSort)
+    
     const handleSortBy = (sortBy: string) => {
-        dispatch(sortModels({sortBy: sortBy}))
+        dispatch(sortModels({sortBy}))
     }
 
     return (
