@@ -1,7 +1,7 @@
 import './App.css'
 import NavBar from './components/NavBar'
-import Host from './components/Host'
-import Client from './components/Client'
+import HuggingFaceModels from './components/HuggingFaceModels'
+import Library from './components/Library'
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 
@@ -12,9 +12,9 @@ function App() {
       <BrowserRouter>
         <NavBar/>
         <Routes>
-          <Route path="/" element={<Navigate to="/host" replace/>}/>
-          <Route path="host" element={<Host/>}/>
-          <Route path="client" element={<Client/>}/>
+          <Route path="/" element={<Navigate to="/models" replace/>}/>
+          <Route path="models" element={<HuggingFaceModels/>}/>
+          <Route path="library" element={<Library/>}/>
         </Routes>
       </BrowserRouter>
     </>

@@ -6,18 +6,23 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/clerk-react"
+import { useUser } from "@clerk/clerk-react"
 
 interface NavigationItem {
-  name: string;
-  href: string;
+  name: string
+  href: string
 }
 
-const navigation: NavigationItem[] = [
-  { name: 'Host', href: 'host' },
-  { name: 'Client', href: 'client' },
-]
-
 export default function NavBar() {
+  const { isSignedIn } = useUser()
+
+  const navigation: NavigationItem[] = isSignedIn
+    ? [
+        { name: "Open Source Models", href: "models" },
+        { name: "Library", href: "library" },
+      ]
+    : [{ name: "Open Source Models", href: "models" }]
+
   return (
     <div className="sticky top-0 z-50 bg-gray-300 shadow-lg">
       <nav className="max-w-6xl mx-auto px-4">
@@ -31,8 +36,8 @@ export default function NavBar() {
                 className={({ isActive }) =>
                   `m-2 px-6 py-2 text-lg font-medium transition-colors duration-200 rounded-full ${
                     isActive
-                      ? 'text-white bg-gray-700'
-                      : 'text-black border-transparent hover:text-white hover:bg-gray-700'
+                      ? "text-white bg-gray-700"
+                      : "text-black border-transparent hover:text-white hover:bg-gray-700"
                   }`
                 }
               >
@@ -40,6 +45,7 @@ export default function NavBar() {
               </NavLink>
             ))}
           </div>
+
           <div className="flex items-center space-x-4">
             <SignedOut>
               <SignInButton mode="modal">
@@ -53,6 +59,7 @@ export default function NavBar() {
                 </button>
               </SignUpButton>
             </SignedOut>
+
             <SignedIn>
               <UserButton />
             </SignedIn>

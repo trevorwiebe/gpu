@@ -20,7 +20,7 @@ export default function ModelItem(props: ModelItemProps) {
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
                 <div onClick={() => props.onFavorite(props.model, !props.inLibrary)}>
-                    {props.authenticated && props.inLibrary ? <FaHeart/> : <FaRegHeart/>}
+                    {props.authenticated && (props.inLibrary ? <FaHeart/> : <FaRegHeart/>)}
                 </div>
             </div>
             <div>
