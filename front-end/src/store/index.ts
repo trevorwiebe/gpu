@@ -27,4 +27,8 @@ export default store
 export { useFetchModelsQuery } from './apis/modelsApi';
 export { sortModels } from './slice/modelsSlice'
 
-export { useFetchLibraryQuery } from './apis/libraryApi';
+export { 
+    useFetchLibraryQuery,
+    useAddToLibraryMutation,
+    useRemoveFromLibraryMutation
+ } from './apis/libraryApi';

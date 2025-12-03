@@ -26,7 +26,7 @@ export interface Model {
 
 // User library object
 export interface Library{
-  id: number;
+  id: string;
   userId: string;
   modelId: string
 }

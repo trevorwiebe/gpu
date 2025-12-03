@@ -5,6 +5,7 @@ const libraryApi = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'http://localhost:3000'
     }),
+    tagTypes: ['library'],
     endpoints (build){
         return {
             fetchLibrary: build.query({
@@ -16,11 +17,34 @@ const libraryApi = createApi({
                         },
                         method: 'GET'
                     }
-                }
+                },
+                providesTags: ['library']
+            }),
+            addToLibrary: build.mutation({
+                query: ({userId, modelId}) => ({
+                    url: '/library',
+                    method: 'POST',
+                    body: {
+                        userId, 
+                        modelId
+                    }
+                }),
+                invalidatesTags: ['library']
+            }),
+            removeFromLibrary: build.mutation({
+                query: (id) => ({
+                    url: `/library/${id}`,
+                    method: 'DELETE'
+                }),
+                invalidatesTags: ['library']
             })
         }
     }
 });
 
-export const { useFetchLibraryQuery } = libraryApi;
+export const { 
+    useFetchLibraryQuery,
+    useAddToLibraryMutation,
+    useRemoveFromLibraryMutation
+ } = libraryApi;
 export { libraryApi };

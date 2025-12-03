@@ -5,20 +5,23 @@ import { Model } from '../../types';
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 
 interface ModelItemProps {
-    name: Model;
+    model: Model;
     authenticated: Boolean | undefined;
-    inLibrary: Boolean
+    inLibrary: Boolean,
+    onFavorite: (model: Model, favorite: Boolean) => void
 }
 
 export default function ModelItem(props: ModelItemProps) {
 
-    const {_id, id, downloads, likes, createdAt} = props.name;
+    const {_id, id, downloads, likes, createdAt} = props.model;
     
     return (
         <div className="rounded-md shadow-sm p-4 m-2">
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
-                {props.authenticated && props.inLibrary ? <FaHeart/> : <FaRegHeart/>}
+                <div onClick={() => props.onFavorite(props.model, !props.inLibrary)}>
+                    {props.authenticated && props.inLibrary ? <FaHeart/> : <FaRegHeart/>}
+                </div>
             </div>
             <div>
                 <Chip label={"Downloads"} text={numberFormatter(downloads)}/>
