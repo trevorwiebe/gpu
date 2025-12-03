@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { ModelSortState, SortPayload } from '@/types'
+import { ModelSortState } from '@/types'
 
 const modelSortSlice = createSlice({
     name: 'modelUi',
@@ -8,8 +8,8 @@ const modelSortSlice = createSlice({
         sortOrder: 'asc'
     } as ModelSortState,
     reducers: {
-        sortModels: (state, action: PayloadAction<SortPayload>) => {
-            const { sortBy } = action.payload;
+        sortModels: (state, action: PayloadAction<string>) => {
+            const sortBy = action.payload;
 
             let sortOrder = state.sortOrder
             if(sortBy == state.sortBy){

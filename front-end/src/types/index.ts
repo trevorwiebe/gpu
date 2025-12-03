@@ -37,11 +37,6 @@ export interface ModelSortState {
   sortOrder: 'asc' | 'desc';
 }
 
-// Sort action payload
-export interface SortPayload {
-  sortBy: string;
-}
-
 // Root State interface
 export interface RootState {
   modelsSort: ModelSortState;

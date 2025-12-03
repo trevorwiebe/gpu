@@ -10,7 +10,7 @@ export default function Sorter() {
     const { sortBy } = useSelector((state: RootState) => state.modelsSort)
     
     const handleSortBy = (sortBy: string) => {
-        dispatch(sortModels({sortBy}))
+        dispatch(sortModels(sortBy))
     }
 
     return (
