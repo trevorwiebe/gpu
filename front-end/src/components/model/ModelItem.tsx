@@ -6,7 +6,8 @@ import { FaRegHeart, FaHeart } from "react-icons/fa";
 
 interface ModelItemProps {
     name: Model;
-    authenticated: Boolean | undefined
+    authenticated: Boolean | undefined;
+    inLibrary: Boolean
 }
 
 export default function ModelItem(props: ModelItemProps) {
@@ -17,7 +18,7 @@ export default function ModelItem(props: ModelItemProps) {
         <div className="rounded-md shadow-sm p-4 m-2">
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
-                {props.authenticated && <FaRegHeart/>}
+                {props.authenticated && props.inLibrary ? <FaHeart/> : <FaRegHeart/>}
             </div>
             <div>
                 <Chip label={"Downloads"} text={numberFormatter(downloads)}/>

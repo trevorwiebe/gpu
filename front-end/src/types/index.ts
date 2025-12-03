@@ -24,6 +24,13 @@ export interface Model {
   [key: string]: unknown;
 }
 
+// User library object
+export interface Library{
+  id: number;
+  userId: string;
+  modelId: string
+}
+
 // Redux State interface
 export interface ModelSortState {
   sortBy: string;

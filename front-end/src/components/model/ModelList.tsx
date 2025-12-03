@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { useUser } from "@clerk/clerk-react";
-import { useFetchModelsQuery } from '../../store';
+import { useFetchModelsQuery, useFetchLibraryQuery } from '../../store';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+
+import { Model, Library } from '../../types'
 
 import ModelItem from './ModelItem';
 import Loader from '../small/Loader';
@@ -10,12 +12,22 @@ import Error from '../small/Error';
 
 export default function ModelsList() {
 
-  const { data: models = [], error, isLoading} = useFetchModelsQuery();
+  const { user, isSignedIn } = useUser();
+
+  const { 
+    data: models = [], 
+    error: modelError,
+    isLoading: modelLoading
+  } = useFetchModelsQuery();
+
+  const { 
+    data: library, 
+    error: libraryError, 
+    isLoading: libraryLoading 
+  } = useFetchLibraryQuery(user?.id);
+
   const { sortBy, sortOrder } = useSelector((state: RootState) => state.modelsSort);
-  const { isSignedIn } = useUser();
-
-  console.log(models);
-
+  
   const sortedModels = useMemo(() => {
     const sorted = [...models].sort((a, b) => {
       let valueA = a[sortBy as keyof typeof a];
@@ -45,15 +57,23 @@ export default function ModelsList() {
     return sorted;
   }, [models, sortBy, sortOrder]);
 
-  if (isLoading) return <Loader/>
-  if (error) return <Error text={"Something went wrong"} />;
+  if (modelLoading) return <Loader/>
+  if (modelError) return <Error text={"Something went wrong"} />;
+
+  const inLibrary = (model: Model, library: Library[]) => {
+    return library.some(item => item.modelId === model._id)
+  }
 
   return (
     <div>
       <ul>
         {sortedModels?.map(model => (
           <li key={model.id}>
-            <ModelItem name={model} authenticated={isSignedIn}/>
+            <ModelItem 
+              name={model}
+              authenticated={isSignedIn}
+              inLibrary={inLibrary(model, library)}
+            />
           </li>
         ))}
       </ul>
