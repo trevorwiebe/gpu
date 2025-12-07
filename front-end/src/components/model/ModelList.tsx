@@ -68,8 +68,8 @@ export default function ModelsList() {
   if (modelLoading) return <Loader/>
   if (modelError) return <Error text={"Something went wrong"} />;
 
-  const inLibrary = (model: Model, library: Library[]) => {
-    return library.some(item => item.modelId === model._id)
+  const inLibrary = (model: Model, library?: Library[]) => {
+    return library?.some(item => item.modelId === model._id) || false
   }
 
   const setInLibrary = async (model: Model, favorite: Boolean) => {
