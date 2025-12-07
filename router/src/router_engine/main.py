@@ -10,6 +10,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
+import redis
+import json
 
 app = FastAPI(title="GPU Router", version="1.0.0")
 
@@ -21,7 +23,6 @@ NODE_API_KEY = os.getenv("NODE_API_KEY", "secure-router-key-123")
 class CompletionRequest(BaseModel):
     prompt: str
     model: str = "SmolLM2-135M-Instruct"
-    max_tokens: int = 512
     temperature: float = 0.7
 
 class CompletionResponse(BaseModel):
@@ -31,7 +32,12 @@ class CompletionResponse(BaseModel):
     choices: list
     usage: dict
 
-
+class SetModelRequest(BaseModel):
+    userId: str
+    modelId: str
+    modelName: str
+    isSet: bool    
+    
 @app.post("/completions")
 async def completions(request: CompletionRequest):
     """Route completion requests to node"""
@@ -42,7 +48,6 @@ async def completions(request: CompletionRequest):
         # Prepare request payload for node
         node_request = {
             "prompt": request.prompt,
-            "max_new_tokens": request.max_tokens,
             "temperature": request.temperature,
             "do_sample": True
         }
@@ -121,6 +126,70 @@ async def health():
             "error": str(e),
             "node_url": NODE_URL
         }
+
+@app.post("/user/me/library")
+async def setModel(request: SetModelRequest):
+    """Set model in hosting library"""
+
+    try:
+        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+        if(request.isSet):
+            client.hset(
+                f'model:{request.modelId}',
+                mapping={
+                    "id": request.modelId,
+                    "name": request.modelName,
+                    "userId": request.userId,
+                    "health": "active"
+                }
+            )
+        else:
+            client.delete(f'model:{request.modelId}')
+        
+        return {
+            "status": "success"
+        }
+    
+    # In a production environment, avoid exposing the full 'e' to the client for security concerns
+    except redis.exceptions.ConnectionError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Redis service unavailable: {str(e)}"
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        ) from e
+    
+@app.get("/user/me/library")
+async def getLibrary(userId: str):
+    """Get the users library"""
+
+    try:
+
+        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+        model_keys = client.keys('model:*')
+
+        models = []
+        for key in model_keys:
+            model = client.hgetall(key)
+            models.append(model)
+
+        return models
+    # In a production environment, avoid exposing the full 'e' to the client for security concerns
+    except redis.exceptions.ConnectionError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Redis service unavailable: {str(e)}"
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        ) from e
 
 
 if __name__ == "__main__":
