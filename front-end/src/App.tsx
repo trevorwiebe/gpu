@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/models" replace/>}/>
           <Route path="models" element={<HuggingFaceModels/>}/>
-          <Route path="library" element={<Library/>}/>
+          <Route path="hosted" element={<Library/>}/>
         </Routes>
       </BrowserRouter>
     </>

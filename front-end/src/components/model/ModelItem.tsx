@@ -2,7 +2,7 @@ import {numberFormatter} from '../../utils/numberFormat'
 import {dateFormatter} from '../../utils/dateFormat'
 import Chip from '../Chip';
 import { Model } from '../../types';
-import { FaRegHeart, FaHeart } from "react-icons/fa";
+import Button from '../small/Button'
 
 interface ModelItemProps {
     model: Model;
@@ -14,13 +14,25 @@ interface ModelItemProps {
 export default function ModelItem(props: ModelItemProps) {
 
     const {_id, id, downloads, likes, createdAt} = props.model;
+
+    const startHostingBtn = <Button 
+        title="Host" 
+        onClick={ () => props.onFavorite(props.model, !props.inLibrary)}
+        className="border-green-900 text-green-900 hover:bg-gray-200 hover:shadow-md"
+    />
+
+    const stopHostingBtn = <Button 
+        title="Stop Hosting" 
+        onClick={ () => props.onFavorite(props.model, !props.inLibrary) }
+        className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:shadow-md"
+    />
     
     return (
         <div className="rounded-md shadow-sm p-4 m-2">
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
-                <div onClick={() => props.onFavorite(props.model, !props.inLibrary)}>
-                    {props.authenticated && (props.inLibrary ? <FaHeart/> : <FaRegHeart/>)}
+                <div>
+                    {props.authenticated && (props.inLibrary ? stopHostingBtn : startHostingBtn)}
                 </div>
             </div>
             <div>

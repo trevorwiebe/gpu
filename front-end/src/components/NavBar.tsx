@@ -19,7 +19,7 @@ export default function NavBar() {
   const navigation: NavigationItem[] = isSignedIn
     ? [
         { name: "Open Source Models", href: "models" },
-        { name: "Library", href: "library" },
+        { name: "My Hosted Models", href: "hosted" },
       ]
     : [{ name: "Open Source Models", href: "models" }]
 
