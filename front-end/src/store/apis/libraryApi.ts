@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const libraryApi = createApi({
     reducerPath: 'library',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:3000'
+        baseUrl: 'http://localhost:8000'
     }),
     tagTypes: ['library'],
     endpoints (build){
@@ -11,7 +11,7 @@ const libraryApi = createApi({
             fetchLibrary: build.query({
                 query: (userId) => {
                     return {
-                        url: '/library',
+                        url: '/user/me/library',
                         params: {
                             userId: userId,
                         },
@@ -20,21 +20,15 @@ const libraryApi = createApi({
                 },
                 providesTags: ['library']
             }),
-            addToLibrary: build.mutation({
-                query: ({userId, modelId}) => ({
-                    url: '/library',
+            setInLibrary: build.mutation({
+                query: ({userId, modelId, isSet}) => ({
+                    url: '/user/me/library',
                     method: 'POST',
                     body: {
                         userId, 
-                        modelId
+                        modelId,
+                        isSet
                     }
-                }),
-                invalidatesTags: ['library']
-            }),
-            removeFromLibrary: build.mutation({
-                query: (id) => ({
-                    url: `/library/${id}`,
-                    method: 'DELETE'
                 }),
                 invalidatesTags: ['library']
             })
@@ -44,7 +38,6 @@ const libraryApi = createApi({
 
 export const { 
     useFetchLibraryQuery,
-    useAddToLibraryMutation,
-    useRemoveFromLibraryMutation
+    useSetInLibraryMutation
  } = libraryApi;
 export { libraryApi };

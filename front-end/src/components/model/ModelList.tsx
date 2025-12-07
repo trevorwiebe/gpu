@@ -3,8 +3,7 @@ import { useUser } from "@clerk/clerk-react";
 import { 
   useFetchModelsQuery, 
   useFetchLibraryQuery,
-  useAddToLibraryMutation,
-  useRemoveFromLibraryMutation
+  useSetInLibraryMutation,
  } from '../../store';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
@@ -25,14 +24,13 @@ export default function ModelsList() {
     isLoading: modelLoading
   } = useFetchModelsQuery();
 
-  const { 
-    data: library, 
-    error: libraryError, 
-    isLoading: libraryLoading 
-  } = useFetchLibraryQuery(user?.id);
+  const {
+    data: library,
+    error: libraryError,
+    isLoading: libraryLoading
+  } = useFetchLibraryQuery(user?.id, {skip: !user?.id});
 
-  const [addToLibrary] = useAddToLibraryMutation();
-  const [removeFromLibrary] = useRemoveFromLibraryMutation()
+  const [setInLibrary] = useSetInLibraryMutation();
 
   const { sortBy, sortOrder } = useSelector((state: RootState) => state.modelsSort);
   
@@ -72,17 +70,12 @@ export default function ModelsList() {
     return library?.some(item => item.modelId === model._id) || false
   }
 
-  const setInLibrary = async (model: Model, favorite: Boolean) => {
+  const handleSetInLibrary = async (model: Model, isSet: Boolean) => {
 
     const userId = user?.id;
     const modelId = model._id;
 
-    if(favorite){
-      await addToLibrary({userId, modelId});
-    }else{
-      const libraryEntry = library.find((item: Library) => item.modelId === model._id);
-      await removeFromLibrary(libraryEntry.id);
-    }
+    await setInLibrary({userId, modelId, isSet});
   }
 
   return (
@@ -94,7 +87,7 @@ export default function ModelsList() {
               model={model}
               authenticated={isSignedIn}
               inLibrary={inLibrary(model, library)}
-              onFavorite={setInLibrary}
+              onFavorite={handleSetInLibrary}
             />
           </li>
         ))}

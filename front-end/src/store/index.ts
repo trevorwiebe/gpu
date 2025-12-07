@@ -29,6 +29,5 @@ export { sortModels } from './slice/modelsSlice'
 
 export { 
     useFetchLibraryQuery,
-    useAddToLibraryMutation,
-    useRemoveFromLibraryMutation
+    useSetInLibraryMutation,
  } from './apis/libraryApi';
