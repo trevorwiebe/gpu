@@ -7,13 +7,21 @@ Route requests to nodes via HTTP API
 import os
 import httpx # type: ignore
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import redis
-import json
 
 app = FastAPI(title="GPU Router", version="1.0.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration
 NODE_URL = os.getenv("NODE_URL", "http://node:8005")
@@ -35,7 +43,6 @@ class CompletionResponse(BaseModel):
 class SetModelRequest(BaseModel):
     userId: str
     modelId: str
-    modelName: str
     isSet: bool    
     
 @app.post("/completions")
@@ -139,8 +146,8 @@ async def setModel(request: SetModelRequest):
                 f'model:{request.modelId}',
                 mapping={
                     "id": request.modelId,
-                    "name": request.modelName,
                     "userId": request.userId,
+                    "modelId": request.modelId,
                     "health": "active"
                 }
             )
