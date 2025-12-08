@@ -142,7 +142,9 @@ async def setModel(request: SetModelRequest):
         client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
 
         if(request.isSet):
-            client.hset(
+            # Use pipeline to update both the model hash AND the user's set
+            pipe = client.pipeline()
+            pipe.hset(
                 f'model:{request.modelId}',
                 mapping={
                     "id": request.modelId,
@@ -151,8 +153,14 @@ async def setModel(request: SetModelRequest):
                     "health": "active"
                 }
             )
+            pipe.sadd(f'user:{request.userId}:models', request.modelId)
+            pipe.execute()
         else:
-            client.delete(f'model:{request.modelId}')
+            # Remove from both the model hash AND the user's set
+            pipe = client.pipeline()
+            pipe.delete(f'model:{request.modelId}')
+            pipe.srem(f'user:{request.userId}:models', request.modelId)
+            pipe.execute()
         
         return {
             "status": "success"
@@ -178,12 +186,15 @@ async def getLibrary(userId: str):
 
         client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
 
-        model_keys = client.keys('model:*')
+        # Get model IDs from the user's set (FAST!)
+        model_ids = client.smembers(f'user:{userId}:models')
 
+        # Fetch each model's data
         models = []
-        for key in model_keys:
-            model = client.hgetall(key)
-            models.append(model)
+        for model_id in model_ids:
+            model = client.hgetall(f'model:{model_id}')
+            if model:  # Only add if model exists
+                models.append(model)
 
         return models
     # In a production environment, avoid exposing the full 'e' to the client for security concerns
