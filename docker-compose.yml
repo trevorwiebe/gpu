@@ -26,7 +26,6 @@ services:
     networks:
       - gpu-net
     environment:
-      - MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct
       - ROUTER_API_KEY=secure-router-key-123
 
 networks:

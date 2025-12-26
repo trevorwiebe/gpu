@@ -13,4 +13,4 @@ redis-cli -h localhost -p 6379 --scan --pattern "setup_token_name:*" | xargs -r 
 docker-compose build node
 docker-compose up -d node
 
-echo "All nodes killed, rebuilt with 1 node"
+docker-compose logs -f node

@@ -34,6 +34,14 @@ async def get_nodes(userId: str):
                 assigned_models = client.smembers(f'node:{node_id}:models')
                 node_data['assignedModels'] = list(assigned_models) if assigned_models else []
 
+                # Ensure model status fields exist (backward compatibility)
+                if 'modelStatus' not in node_data:
+                    node_data['modelStatus'] = 'idle'
+                if 'activeModel' not in node_data:
+                    node_data['activeModel'] = ''
+                if 'activeModelName' not in node_data:
+                    node_data['activeModelName'] = ''
+
                 nodes.append(node_data)
 
         return nodes
@@ -88,7 +96,10 @@ async def authenticate_node(request: AuthenticateNodeRequest):
             "nodeId": node_id,
             "userId": request.userId,
             "status": "active",
-            "nodeName": node_name
+            "nodeName": node_name,
+            "modelStatus": "idle",
+            "activeModel": "",
+            "activeModelName": ""
         }
 
         # Store node data

@@ -38,8 +38,12 @@ export default function NodeList(){
                 <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-[3vw]">
                     <p className="font-semibold">{node.nodeName}</p>
                     <p className='my-1 text-gray-500 text-xs'>Status: {node.status}</p>
+                    <p className='my-1 text-gray-500 text-xs'>Model Status: {node.modelStatus || 'idle'}</p>
+                    {node.activeModelName && (
+                        <p className='my-1 text-gray-700 text-xs'>Active: {node.activeModelName}</p>
+                    )}
                     <p className='my-1 text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
-                    <p className='my-1 text-gray-700 text-xs'>Hosted models</p>
+                    <p className='my-1 text-gray-700 text-xs'>Assigned models</p>
                     {nodes}
                 </div>
             );

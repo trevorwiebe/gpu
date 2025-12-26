@@ -3,7 +3,6 @@ FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    MODEL_PATH=/models/HuggingFaceTB/SmolLM2-135M-Instruct \
     CUDA_VISIBLE_DEVICES=0
 
 # Install system dependencies
@@ -32,11 +31,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install huggingface-cli
 RUN pip install huggingface_hub
 
-# Create models directory
-RUN mkdir -p /models/HuggingFaceTB/SmolLM2-135M-Instruct
-
-# Download SmolLM2-135M-Instruct model
-RUN huggingface-cli download HuggingFaceTB/SmolLM2-135M-Instruct --local-dir /models/HuggingFaceTB/SmolLM2-135M-Instruct
+# Create models directory (models will be downloaded dynamically)
+RUN mkdir -p /models
 
 # Create app directory
 WORKDIR /app

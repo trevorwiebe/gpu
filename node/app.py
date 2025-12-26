@@ -38,8 +38,6 @@ def generate_node_name():
     return f"{adjective}-{noun}"
 
 # Configuration
-MODEL_NAME = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-135M-Instruct")
-MODEL_PATH = os.getenv("MODEL_PATH", f"/models/{MODEL_NAME}")
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
 DEVICE_OVERRIDE = os.getenv("DEVICE_OVERRIDE", None)
 
@@ -52,7 +50,7 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     generated_text: str
-    model: str = MODEL_NAME
+    model: str
 
 class AuthenticateRequest(BaseModel):
     userId: str
@@ -104,15 +102,16 @@ async def verify_api_key(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# Global variables for model
-tokenizer = None
-model = None
-generator = None
+# Global variables for model - support for multiple models (future-proofing)
+# Structure: { model_id: { "model": obj, "tokenizer": obj, "generator": obj, "model_name": str } }
+loaded_models = {}
+currently_active_model_id = None  # For single-model mode
 
 # Global variables for node authentication
 node_id = str(uuid.uuid4())
 node_authenticated = False
 node_user_id = None
+node_model_status = "idle"  # Values: "idle", "downloading", "loading", "ready", "error"
 
 # Redis connection
 def get_redis_client():
@@ -139,6 +138,83 @@ def check_authentication_status():
     except:
         return False
 
+async def poll_for_model_assignments():
+    """
+    Continuously poll Redis for model assignments
+    Only starts polling after node is authenticated
+    """
+    import asyncio
+    global node_authenticated, node_model_status
+
+    POLL_INTERVAL = 5  # seconds
+
+    while True:
+        try:
+            # Wait until authenticated
+            if not check_authentication_status():
+                await asyncio.sleep(POLL_INTERVAL)
+                continue
+
+            # Check for assigned models in Redis
+            client = get_redis_client()
+            assigned_model_ids = client.smembers(f'node:{node_id}:models')
+
+            if not assigned_model_ids:
+                # No models assigned - unload any loaded models and go idle
+                if loaded_models:
+                    for model_id in list(loaded_models.keys()):
+                        unload_model(model_id)
+                    node_model_status = "idle"
+                await asyncio.sleep(POLL_INTERVAL)
+                continue
+
+            # For single-model support: load first assigned model
+            target_model_id = list(assigned_model_ids)[0]
+
+            # Check if we need to load/switch models
+            if currently_active_model_id != target_model_id:
+                # Get model details from Redis
+                model_data = client.hgetall(f'model:{target_model_id}')
+
+                if not model_data:
+                    logging.error(f"Model {target_model_id} not found in Redis")
+                    await asyncio.sleep(POLL_INTERVAL)
+                    continue
+
+                model_name = model_data.get('modelName') or model_data.get('modelId')
+
+                if not model_name:
+                    logging.error(f"No model name found for {target_model_id}")
+                    await asyncio.sleep(POLL_INTERVAL)
+                    continue
+
+                # Unload old models (single-model mode)
+                for old_model_id in list(loaded_models.keys()):
+                    if old_model_id != target_model_id:
+                        unload_model(old_model_id)
+
+                # Load the new model
+                success = load_model(target_model_id, model_name)
+
+                # Update node status in Redis
+                if success:
+                    client.hset(f'node:{node_id}', mapping={
+                        "modelStatus": "ready",
+                        "activeModel": target_model_id,
+                        "activeModelName": model_name
+                    })
+                else:
+                    client.hset(f'node:{node_id}', mapping={
+                        "modelStatus": "error",
+                        "activeModel": "",
+                        "activeModelName": ""
+                    })
+
+        except Exception as e:
+            logging.error(f"Error in polling loop: {str(e)}")
+
+        await asyncio.sleep(POLL_INTERVAL)
+
 def get_device():
     """Detect the best available device with fallback"""
     if DEVICE_OVERRIDE:
@@ -158,94 +234,164 @@ def get_device():
     print("No GPU detected, using CPU")
     return "cpu"
 
-def load_model():
-    """Load the LLM model and tokenizer with device optimization"""
-    global tokenizer, model, generator
-    
-    device = get_device()
-    print(f"Loading model {MODEL_NAME}...")
-    print(f"Using device: {device}")
-    
-    # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    
-    # Load model with device-specific optimizations
-    if device == "cuda":
-        print("Loading model with CUDA optimizations...")
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_NAME,
-            torch_dtype=torch.float16,
-            device_map="auto",
-            low_cpu_mem_usage=True
-        )
-        generator = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer
-        )
-    elif device == "mps":
-        print("Loading model with MPS optimizations...")
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_NAME,
-            torch_dtype=torch.float16,
-            device_map="auto"
-        )
-        generator = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer
-        )
-    else:
-        print("Loading model for CPU...")
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_NAME,
-            torch_dtype=torch.float32
-        )
-        generator = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer,
-            device=device
-        )
-    
-    print("Model loaded successfully!")
-    print(f"Model device: {model.device}")
+def load_model(model_id: str, model_name: str) -> bool:
+    """
+    Dynamically load a model by downloading it from HuggingFace and loading into memory
+
+    Args:
+        model_id: The model ID from Redis (e.g., unique identifier)
+        model_name: The HuggingFace model name (e.g., "HuggingFaceTB/SmolLM2-135M-Instruct")
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    global loaded_models, currently_active_model_id, node_model_status
+
+    # Check if already loaded
+    if model_id in loaded_models:
+        logging.info(f"Model {model_id} already loaded")
+        currently_active_model_id = model_id
+        return True
+
+    try:
+        node_model_status = "downloading"
+        model_path = f"/models/{model_name}"
+
+        # Download model if not exists
+        if not os.path.exists(model_path):
+            logging.info(f"Downloading model {model_name} to {model_path}...")
+            import subprocess
+            result = subprocess.run(
+                ["huggingface-cli", "download", model_name, "--local-dir", model_path],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode != 0:
+                logging.error(f"Failed to download model: {result.stderr}")
+                node_model_status = "error"
+                return False
+
+        node_model_status = "loading"
+        device = get_device()
+        logging.info(f"Loading model {model_name} from {model_path}...")
+        logging.info(f"Using device: {device}")
+
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        # Load model with device-specific optimizations
+        if device == "cuda":
+            logging.info("Loading model with CUDA optimizations...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                low_cpu_mem_usage=True
+            )
+            generator = pipeline(
+                "text-generation",
+                model=model,
+                tokenizer=tokenizer
+            )
+        elif device == "mps":
+            logging.info("Loading model with MPS optimizations...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16,
+                device_map="auto"
+            )
+            generator = pipeline(
+                "text-generation",
+                model=model,
+                tokenizer=tokenizer
+            )
+        else:
+            logging.info("Loading model for CPU...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float32
+            )
+            generator = pipeline(
+                "text-generation",
+                model=model,
+                tokenizer=tokenizer,
+                device=device
+            )
+
+        # Store in loaded_models dictionary
+        loaded_models[model_id] = {
+            "model": model,
+            "tokenizer": tokenizer,
+            "generator": generator,
+            "model_name": model_name
+        }
+
+        currently_active_model_id = model_id
+        node_model_status = "ready"
+
+        logging.info(f"Model {model_name} loaded successfully!")
+        logging.info(f"Model device: {model.device}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to load model {model_name}: {str(e)}")
+        node_model_status = "error"
+        return False
+
+def unload_model(model_id: str):
+    """Unload a model from memory to free resources"""
+    global loaded_models, currently_active_model_id
+
+    if model_id in loaded_models:
+        logging.info(f"Unloading model {model_id}...")
+
+        # Delete model objects to free memory
+        del loaded_models[model_id]
+
+        # Clear CUDA cache if applicable
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        # Update active model if we unloaded it
+        if currently_active_model_id == model_id:
+            currently_active_model_id = None
+
+        logging.info(f"Model {model_id} unloaded successfully")
 
 @app.on_event("startup")
 async def startup_event():
-    """Load model on startup"""
-    load_model()
-
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "SmolLM2 Server",
-        "model": MODEL_NAME,
-        "device": get_device(),
-        "status": "ready"
-    }
+    """Start background polling for model assignments"""
+    import asyncio
+    asyncio.create_task(poll_for_model_assignments())
+    logging.info("Node started in idle mode - waiting for authentication and model assignment")
 
 @app.get("/health")
 async def health():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "model": MODEL_NAME,
+        "node_status": node_model_status,
+        "authenticated": node_authenticated,
+        "model_loaded": currently_active_model_id is not None,
+        "active_model": currently_active_model_id,
         "device": get_device(),
-        "model_loaded": generator is not None
+        "loaded_models_count": len(loaded_models)
     }
 
 @app.get("/device")
 async def device_info():
     """Device information endpoint"""
     device = get_device()
+    current_device = None
+    if currently_active_model_id and currently_active_model_id in loaded_models:
+        current_device = str(loaded_models[currently_active_model_id]["model"].device)
     return {
         "device": device,
         "cuda_available": torch.cuda.is_available(),
         "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
         "mps_available": torch.backends.mps.is_available(),
-        "current_device": str(model.device) if model else None,
+        "current_device": current_device,
         "device_override": DEVICE_OVERRIDE
     }
 
@@ -307,9 +453,19 @@ async def get_setup_info():
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_text(request: GenerateRequest):
     """Generate text using LLM"""
-    if generator is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
-    
+
+    # Check if authenticated
+    if not node_authenticated:
+        raise HTTPException(status_code=403, detail="Node not authenticated")
+
+    # Check if a model is loaded
+    if currently_active_model_id is None or currently_active_model_id not in loaded_models:
+        raise HTTPException(status_code=503, detail="No model loaded")
+
+    active_model_data = loaded_models[currently_active_model_id]
+    generator = active_model_data["generator"]
+    tokenizer = active_model_data["tokenizer"]
+
     try:
         # Generate text
         outputs = generator(
@@ -320,11 +476,14 @@ async def generate_text(request: GenerateRequest):
             pad_token_id=tokenizer.eos_token_id if tokenizer else None,
             return_full_text=False
         )
-        
+
         generated_text = outputs[0]["generated_text"]
-        
-        return GenerateResponse(generated_text=generated_text)
-    
+
+        return GenerateResponse(
+            generated_text=generated_text,
+            model=active_model_data["model_name"]
+        )
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
