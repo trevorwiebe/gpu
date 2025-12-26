@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NodeModel } from "@/types";
 import Button from '../small/Button';
 
@@ -16,6 +16,26 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
 
     // This state tracks the currently selected nodeId (before confirmation)
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+    // Ref for the dropdown container to detect outside clicks
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
 
     // We call this function when the user makes a selection from the dropdown menu, but has not confirmed it yet.
     const handleDropdownSelect = (nodeId: string) => {
@@ -70,7 +90,7 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
     }
 
     return (
-        <div className="relative">
+        <div ref={dropdownRef} className="relative">
             <Button
                 title="Select Node"
                 onClick={handleToggleDropdownOpen}
