@@ -23,22 +23,28 @@ export default function LibraryModelList(){
     // if the user is not signed in, we don't want to show this
     if(!isSignedIn) return null
 
-    if (libraryLoading) return <div className="m-4 p-4">Loading library...</div>
-    if (libraryError) return <div className="m-4 p-4 text-red-500">Error loading library</div>
-    if (!library || library.length === 0) return <div className="m-4 p-4">No models in library</div>
+    var renderedContent;
 
-    const renderedLibrary = library.map((model: LibraryModel) => {
-        return (
-            <div key={model.id} className="bg-gray-200 my-2 p-2 rounded-full">
-                {model.modelId}
-            </div>
-        );
-    });
+    if (libraryLoading) {
+        renderedContent = <div>Loading library...</div>
+    } else if (libraryError) {
+        renderedContent = <div className="text-red-500">Error loading library</div>
+    } else if (!library || library.length === 0) {
+        renderedContent = <div>No models in library</div>
+    } else {
+        renderedContent = library.map((model: LibraryModel) => {
+            return (
+                <div key={model.id} className="bg-gray-200 my-2 p-2 rounded-full">
+                    {model.modelId}
+                </div>
+            );
+        });
+    }
 
     return (
         <div className="my-4 p-4">
             <h2 className="text-xl font-bold mb-4">My Library Models</h2>
-            {renderedLibrary}
+            {renderedContent}
         </div>
     )
 }
