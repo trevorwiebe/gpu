@@ -10,10 +10,29 @@ router = APIRouter(
 
 @router.get("/nodes")
 async def get_nodes(userId: str):
-    """Get the user's node"""
+    """Get all nodes for a user with their information"""
 
     try:
-        return {"status": "success"}
+        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+        # Get all node IDs for this user
+        node_ids = client.smembers(f'user:{userId}:nodes')
+
+        if not node_ids:
+            return []
+
+        # Fetch data for each node
+        nodes = []
+        for node_id in node_ids:
+            node_data = client.hgetall(f'node:{node_id}')
+
+            if node_data:
+                # Include the node_id in the response
+                node_data['nodeId'] = node_id
+                nodes.append(node_data)
+
+        return nodes
+
     except redis.exceptions.ConnectionError as e:
         raise HTTPException(
             status_code=500,

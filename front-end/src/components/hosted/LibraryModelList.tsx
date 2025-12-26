@@ -1,6 +1,5 @@
 import { 
-  useFetchModelsQuery, 
-  useFetchLibraryQuery,
+    useFetchLibraryQuery
 } from '../../store';
 
 import { useUser } from "@clerk/clerk-react";
@@ -15,14 +14,14 @@ export default function LibraryModelList(){
 
     const { user, isSignedIn } = useUser();
 
-    // if the user is not signed in, we don't want to show this
-    if(!isSignedIn) return
-
     const {
         data: library,
         error: libraryError,
         isLoading: libraryLoading
     } = useFetchLibraryQuery(user?.id, {skip: !user?.id});
+
+    // if the user is not signed in, we don't want to show this
+    if(!isSignedIn) return null
 
     if (libraryLoading) return <div className="m-4 p-4">Loading library...</div>
     if (libraryError) return <div className="m-4 p-4 text-red-500">Error loading library</div>
