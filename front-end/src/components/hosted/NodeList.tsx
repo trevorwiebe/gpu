@@ -27,12 +27,20 @@ export default function NodeList(){
         renderedContent = <div>No authenticated nodes</div>
     } else {
         renderedContent = nodeData.map((node: NodeModel) => {
+
+            var nodes = node.assignedModels.map((modelId: string) => {
+                return <div>
+                    <p className='my-1 text-gray-500 text-xs'>{modelId}</p>
+                </div>
+            })
+
             return (
                 <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-[3vw]">
                     <p className="font-semibold">{node.nodeName}</p>
-                    <p className='text-gray-500 text-xs'>Status: {node.status}</p>
-                    <p className='text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
-                    <p className='text-gray-500 text-xs'>Assigned Models: {node.assignedModels}</p>
+                    <p className='my-1 text-gray-500 text-xs'>Status: {node.status}</p>
+                    <p className='my-1 text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
+                    <p className='my-1 text-gray-700 text-xs'>Hosted models</p>
+                    {nodes}
                 </div>
             );
         });
