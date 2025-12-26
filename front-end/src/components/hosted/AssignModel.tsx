@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NodeModel } from "@/types";
 import Button from '../small/Button';
 
@@ -10,40 +10,25 @@ interface AssignModelProps {
 
 export default function AssignModel({modelId, nodes, onNodeSelected}: AssignModelProps){
 
-    // This state determines whether or not we should show the confirm button
-    const [confirmSelection, onConfirmSelection] = useState<boolean>(false);
-    const handleToggleConfirmButton = () => onConfirmSelection(!confirmSelection)
-
     // This state is responsible for whether or not the dropdown menu is open
     const [isOpen, setIsOpen] = useState(false);
     const handleToggleDropdownOpen = () => setIsOpen(!isOpen);
 
-    // This state is for the selected nodeId and nodeName
-    const [selectedNodeId,  setSelectedNodeId] = useState<string | null>(null);
-    const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
-
-    // We use a useEffect to populate the assigned nodeId and nodeName when the data becomes available
-    useEffect(() => {
-        const assignedNode = nodes.find(node => node.assignedModels.includes(modelId));
-        if (assignedNode) {
-            setSelectedNodeId(assignedNode.nodeId);
-            setSelectedNodeName(assignedNode.nodeName);
-        }
-    }, [nodes, modelId]);
+    // This state tracks the currently selected nodeId (before confirmation)
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
     // We call this function when the user makes a selection from the dropdown menu, but has not confirmed it yet.
     const handleDropdownSelect = (nodeId: string) => {
         setSelectedNodeId(nodeId);
-        const nodeName = nodes.find(node => node.nodeId === nodeId)?.nodeName || null;
-        setSelectedNodeName(nodeName);
-        handleToggleConfirmButton();
-        handleToggleDropdownOpen();
+        setIsOpen(false);
     }
 
-    // We call this function when the user has confirm the node the want to use to host this model
-    const handleNodeSelect = (nodeId: string) =>{
-        handleToggleConfirmButton()
-        onNodeSelected(nodeId);
+    // We call this function when the user confirms they want to assign this model to the selected node
+    const handleNodeSelect = () => {
+        if (selectedNodeId) {
+            onNodeSelected(selectedNodeId);
+            setSelectedNodeId(null); // Reset selection after confirmation
+        }
     }
 
     var nodeMenu;
@@ -54,55 +39,53 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
                 <div className="p-4 text-center text-gray-500">No nodes available</div>
             </div>
         );
-    }else{
-       nodeMenu = <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-            {nodes.map((node) => {
+    } else {
+        nodeMenu = (
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                {nodes.map((node) => {
+                    // Check if this node already has this model assigned
+                    const isAssigned = node.assignedModels.includes(modelId);
 
-                let className = "px-4 py-2 transition-colors duration-150";
+                    let className = "px-4 py-2 transition-colors duration-150";
 
-                if (selectedNodeId) {
-                    className += " opacity-50 cursor-not-allowed text-gray-400";
-                } else {
-                    className += " hover:bg-green-50 cursor-pointer text-gray-700";
-                }
+                    if (isAssigned) {
+                        // Gray out nodes that already have this model assigned
+                        className += " opacity-50 cursor-not-allowed text-gray-400";
+                    } else {
+                        className += " hover:bg-green-50 cursor-pointer text-gray-700";
+                    }
 
-                return (
-                    <div
-                        key={node.nodeId}
-                        className={className}
-                        onClick={() => !selectedNodeId && handleDropdownSelect(node.nodeId)}
-                    >
-                        {node.nodeName}
-                    </div>
-                );
-            })}
-        </div>
-    }
-
-    if(selectedNodeName){
-        var buttonClasses = "border-green-900 text-white bg-green-900 hover:bg-green-800 hover:border-green-800"
-    }else{
-        var buttonClasses = "border-green-900 text-green-900 hover:bg-green-100"
+                    return (
+                        <div
+                            key={node.nodeId}
+                            className={className}
+                            onClick={() => !isAssigned && handleDropdownSelect(node.nodeId)}
+                        >
+                            {node.nodeName}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     }
 
     return (
         <div className="relative">
             <Button
-                title={selectedNodeName || "Select Node"}
+                title="Select Node"
                 onClick={handleToggleDropdownOpen}
-                className={buttonClasses}
+                className="border-green-900 text-green-900 hover:bg-green-100"
             />
 
-            {isOpen && (nodeMenu)}
+            {isOpen && nodeMenu}
 
-            {confirmSelection && selectedNodeId &&
+            {selectedNodeId && (
                 <Button
                     title="Confirm"
-                    onClick={ () => handleNodeSelect(selectedNodeId)}
+                    onClick={handleNodeSelect}
                     className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:border-green-800 ml-2"
                 />
-            }
-
+            )}
         </div>
     );
 }

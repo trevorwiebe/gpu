@@ -6,6 +6,7 @@ import {
 
 import { useUser } from "@clerk/clerk-react";
 import AssignModel from './AssignModel';
+import AssignedNodeChips from './AssignedNodeChips';
 
 interface LibraryModel {
     id: string,
@@ -65,6 +66,10 @@ export default function LibraryModelList(){
                         <div>
                             <p>{model.modelName}</p>
                             <p className='text-gray-500 text-xs'>Model Id: {model.modelId}</p>
+                            <AssignedNodeChips
+                                modelId={model.modelId}
+                                nodes={nodes || []}
+                            />
                         </div>
                         <AssignModel
                             modelId={model.modelId}
