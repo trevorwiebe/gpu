@@ -13,7 +13,7 @@ interface ModelItemProps {
 
 export default function ModelItem(props: ModelItemProps) {
 
-    const {_id, id, downloads, likes, createdAt} = props.model;
+    const {_id, id, downloads, likes, createdAt, gated} = props.model;
 
     const addToLibraryBtn = <Button 
         title="Add to Library" 
@@ -39,6 +39,7 @@ export default function ModelItem(props: ModelItemProps) {
                 <Chip label={"Downloads"} text={numberFormatter(downloads)}/>
                 <Chip label={"Likes"} text={numberFormatter(likes)}/>
                 <Chip label={"Created"} text={dateFormatter(createdAt)}/>
+                <Chip label={"Access"} text={gated ? "Gated" : "Open"}/>
             </div>
         </div>
     )
