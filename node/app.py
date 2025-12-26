@@ -93,7 +93,6 @@ generator = None
 node_id = str(uuid.uuid4())
 node_authenticated = False
 node_user_id = None
-setup_token = None
 
 # Redis connection
 def get_redis_client():
@@ -236,7 +235,6 @@ async def get_setup_info():
     Get setup information for node authentication
     Returns authentication status and setup URL if not authenticated
     """
-    global setup_token
 
     # Check if already authenticated
     if check_authentication_status():
@@ -248,22 +246,21 @@ async def get_setup_info():
         }
 
     # Generate setup token if not exists
-    if not setup_token:
-        setup_token = str(uuid.uuid4())
+    setup_token = str(uuid.uuid4())
 
-        try:
-            client = get_redis_client()
-            # Store setup token in Redis with pending status (expires in 1 hour)
-            client.setex(
-                f'setup_token:{setup_token}',
-                3600,  # 1 hour expiry
-                node_id
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to generate setup token: {str(e)}"
-            )
+    try:
+        client = get_redis_client()
+        # Store setup token in Redis with pending status (expires in 1 hour)
+        client.setex(
+            f'setup_token:{setup_token}',
+            3600,  # 1 hour expiry
+            node_id
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate setup token: {str(e)}"
+        )
 
     # Generate setup URL (adjust domain as needed)
     setup_url = f"http://localhost:5173/setup/{setup_token}"
