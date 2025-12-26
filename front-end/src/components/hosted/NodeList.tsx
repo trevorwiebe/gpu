@@ -33,8 +33,9 @@ export default function NodeList(){
     } else {
         renderedContent = nodeData.map((node: NodeModel) => {
             return (
-                <div key={node.nodeId} className="my-2 p-2 bg-green-200 rounded-full">
+                <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-full">
                     <p>{node.status}</p>
+                    <p className='text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
                 </div>
             );
         });
