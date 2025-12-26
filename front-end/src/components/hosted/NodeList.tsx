@@ -7,7 +7,8 @@ import { useUser } from "@clerk/clerk-react";
 interface NodeModel {
     nodeId: string,
     userId: string,
-    status: boolean
+    status: boolean,
+    nodeName: string
 }
 
 export default function NodeList(){
@@ -20,7 +21,7 @@ export default function NodeList(){
         isLoading: nodesLoading
     } = useFetchNodesQuery(user?.id, {skip: !user?.id});
 
-    if(!isSignedIn) return
+    if(!isSignedIn) return null
 
     var renderedContent
 
@@ -34,8 +35,8 @@ export default function NodeList(){
         renderedContent = nodeData.map((node: NodeModel) => {
             return (
                 <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-full">
-                    <p>{node.status}</p>
-                    <p className='text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
+                    <p className="font-semibold">{node.nodeName}</p>
+                    <p className='text-gray-500 text-xs'>Status: {node.status}</p>
                 </div>
             );
         });

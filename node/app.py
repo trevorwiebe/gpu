@@ -16,6 +16,26 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from typing import Optional
 import uvicorn
 import logging
+import random
+
+# Nature-themed word lists for node names
+NATURE_ADJECTIVES = [
+    "mountain", "forest", "ocean", "river", "meadow", "valley",
+    "canyon", "glacier", "coral", "desert", "prairie", "tundra",
+    "alpine", "coastal", "highland", "woodland", "wetland", "volcanic"
+]
+
+NATURE_NOUNS = [
+    "stream", "breeze", "tide", "mist", "bloom", "shadow",
+    "light", "dawn", "dusk", "storm", "rain", "snow",
+    "wind", "wave", "cloud", "thunder", "frost", "ember"
+]
+
+def generate_node_name():
+    """Generate a random nature-themed node name"""
+    adjective = random.choice(NATURE_ADJECTIVES)
+    noun = random.choice(NATURE_NOUNS)
+    return f"{adjective}-{noun}"
 
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-135M-Instruct")
@@ -248,6 +268,9 @@ async def get_setup_info():
     # Generate setup token if not exists
     setup_token = str(uuid.uuid4())
 
+    # Generate nature-themed node name
+    node_name = generate_node_name()
+
     try:
         client = get_redis_client()
         # Store setup token in Redis with pending status (expires in 1 hour)
@@ -255,6 +278,12 @@ async def get_setup_info():
             f'setup_token:{setup_token}',
             3600,  # 1 hour expiry
             node_id
+        )
+        # Store node name alongside setup token
+        client.setex(
+            f'setup_token_name:{setup_token}',
+            3600,  # 1 hour expiry
+            node_name
         )
     except Exception as e:
         raise HTTPException(
@@ -268,6 +297,7 @@ async def get_setup_info():
     return {
         "authenticated": False,
         "nodeId": node_id,
+        "nodeName": node_name,
         "setupToken": setup_token,
         "setupUrl": setup_url,
         "message": "Visit the setup URL to authenticate this node",
