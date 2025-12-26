@@ -21,12 +21,13 @@ const libraryApi = createApi({
                 providesTags: ['library']
             }),
             setInLibrary: build.mutation({
-                query: ({userId, modelId, isSet}) => ({
+                query: ({userId, modelId, modelName, isSet}) => ({
                     url: '/user/me/library',
                     method: 'POST',
                     body: {
                         userId, 
                         modelId,
+                        modelName,
                         isSet
                     }
                 }),

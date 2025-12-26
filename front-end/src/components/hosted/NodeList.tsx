@@ -29,7 +29,7 @@ export default function NodeList(){
     } else if (nodeError) {
         renderedContent = <div className="text-red-500">Error loading nodes</div>
     } else if (!nodeData || nodeData.length === 0) {
-        renderedContent = <div>No nodes authenticated</div>
+        renderedContent = <div>No authenticated nodes</div>
     } else {
         renderedContent = nodeData.map((node: NodeModel) => {
             return (

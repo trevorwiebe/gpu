@@ -74,8 +74,9 @@ export default function ModelsList() {
 
     const userId = user?.id;
     const modelId = model._id;
+    const modelName = model.id;
 
-    await setInLibrary({userId, modelId, isSet});
+    await setInLibrary({userId, modelId, modelName, isSet});
   }
 
   return (

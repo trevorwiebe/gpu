@@ -8,6 +8,7 @@ interface LibraryModel {
     id: string,
     userId: string,
     modelId: string,
+    modelName: String,
     health: boolean
 }
 export default function LibraryModelList(){
@@ -34,8 +35,9 @@ export default function LibraryModelList(){
     } else {
         renderedContent = library.map((model: LibraryModel) => {
             return (
-                <div key={model.id} className="bg-gray-200 my-2 p-2 rounded-full">
-                    {model.modelId}
+                <div key={model.id} className="bg-gray-200 my-2 p-4 rounded-full">
+                    <p>{model.modelName}</p>
+                    <p className='text-gray-500 text-xs'>ModelId: {model.modelId}</p>
                 </div>
             );
         });

@@ -23,6 +23,7 @@ async def set_model(request: SetModelRequest):
                 mapping={
                     "id": request.modelId,
                     "userId": request.userId,
+                    "modelName": request.modelName,
                     "modelId": request.modelId,
                     "health": "active"
                 }
