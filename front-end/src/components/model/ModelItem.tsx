@@ -15,14 +15,14 @@ export default function ModelItem(props: ModelItemProps) {
 
     const {_id, id, downloads, likes, createdAt} = props.model;
 
-    const startHostingBtn = <Button 
-        title="Host" 
+    const addToLibraryBtn = <Button 
+        title="Add to Library" 
         onClick={ () => props.onFavorite(props.model, !props.inLibrary)}
         className="border-green-900 text-green-900 hover:bg-gray-200 hover:shadow-md"
     />
 
-    const stopHostingBtn = <Button 
-        title="Stop Hosting" 
+    const removeFromLibraryBtn = <Button 
+        title="Remove from Library" 
         onClick={ () => props.onFavorite(props.model, !props.inLibrary) }
         className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:shadow-md"
     />
@@ -32,7 +32,7 @@ export default function ModelItem(props: ModelItemProps) {
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
                 <div>
-                    {props.authenticated && (props.inLibrary ? stopHostingBtn : startHostingBtn)}
+                    {props.authenticated && (props.inLibrary ? removeFromLibraryBtn : addToLibraryBtn)}
                 </div>
             </div>
             <div>
