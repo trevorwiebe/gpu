@@ -4,3 +4,4 @@ torch==2.5.1
 transformers==4.46.3
 huggingface_hub==0.26.3
 accelerate==1.1.1
+redis==5.0.1

@@ -6,12 +6,16 @@ FastAPI server that serves LLM models with automatic GPU detection
 
 import os
 import torch
+from fastapi.responses import JSONResponse
+import redis
+import uuid
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from typing import Optional
 import uvicorn
+import logging
 
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-135M-Instruct")
@@ -30,6 +34,16 @@ class GenerateResponse(BaseModel):
     generated_text: str
     model: str = MODEL_NAME
 
+class AuthenticateRequest(BaseModel):
+    userId: str
+
+class NodeStatusResponse(BaseModel):
+    authenticated: bool
+    userId: Optional[str] = None
+    nodeId: Optional[str] = None
+
+logging.basicConfig(level=logging.INFO)
+
 # Initialize FastAPI app
 app = FastAPI(title="SmolLM2 Server", version="1.0.0")
 
@@ -45,18 +59,28 @@ app.add_middleware(
 # API Key Authentication Middleware
 @app.middleware("http")
 async def verify_api_key(request: Request, call_next):
-    """Verify API key for all requests except health endpoints"""
-    if request.url.path in ["/", "/health", "/docs", "/openapi.json"]:
+    """Verify API key for all requests except health and setup endpoints"""
+    # Allow localhost setup endpoints without API key
+    if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/setup", "/setup/authenticate", "/setup/status"]:
+        # For setup endpoints, only allow localhost
+        if request.url.path.startswith("/setup"):
+            client_host = request.client.host if request.client else None
+            logging.info(client_host)
+            if client_host not in ["127.0.0.1", "localhost", "::1", "192.168.65.1"]:
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={"detail": "Setup endpoints only accessible from localhost"}
+                )
         response = await call_next(request)
         return response
-    
+
     api_key = request.headers.get("X-API-Key")
     if api_key != ROUTER_API_KEY:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key"
+            content={"detail": "Invalid API key"}
         )
-    
+
     response = await call_next(request)
     return response
 
@@ -64,6 +88,37 @@ async def verify_api_key(request: Request, call_next):
 tokenizer = None
 model = None
 generator = None
+
+# Global variables for node authentication
+node_id = str(uuid.uuid4())
+node_authenticated = False
+node_user_id = None
+setup_token = None
+
+# Redis connection
+def get_redis_client():
+    """Get Redis client connection"""
+    return redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+def check_authentication_status():
+    """Check if node has been authenticated via Redis"""
+    global node_authenticated, node_user_id
+
+    if node_authenticated:
+        return True
+
+    try:
+        client = get_redis_client()
+        node_data = client.hgetall(f'node:{node_id}')
+
+        if node_data and node_data.get('userId'):
+            node_authenticated = True
+            node_user_id = node_data.get('userId')
+            return True
+
+        return False
+    except:
+        return False
 
 def get_device():
     """Detect the best available device with fallback"""
@@ -173,6 +228,53 @@ async def device_info():
         "mps_available": torch.backends.mps.is_available(),
         "current_device": str(model.device) if model else None,
         "device_override": DEVICE_OVERRIDE
+    }
+
+@app.get("/setup")
+async def get_setup_info():
+    """
+    Get setup information for node authentication
+    Returns authentication status and setup URL if not authenticated
+    """
+    global setup_token
+
+    # Check if already authenticated
+    if check_authentication_status():
+        return {
+            "authenticated": True,
+            "userId": node_user_id,
+            "nodeId": node_id,
+            "message": "Node is already authenticated"
+        }
+
+    # Generate setup token if not exists
+    if not setup_token:
+        setup_token = str(uuid.uuid4())
+
+        try:
+            client = get_redis_client()
+            # Store setup token in Redis with pending status (expires in 1 hour)
+            client.setex(
+                f'setup_token:{setup_token}',
+                3600,  # 1 hour expiry
+                node_id
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate setup token: {str(e)}"
+            )
+
+    # Generate setup URL (adjust domain as needed)
+    setup_url = f"http://localhost:5173/setup/{setup_token}"
+
+    return {
+        "authenticated": False,
+        "nodeId": node_id,
+        "setupToken": setup_token,
+        "setupUrl": setup_url,
+        "message": "Visit the setup URL to authenticate this node",
+        "qrCodeData": setup_url  # Frontend can generate QR code from this
     }
 
 @app.post("/generate", response_model=GenerateResponse)
