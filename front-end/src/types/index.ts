@@ -31,6 +31,14 @@ export interface Library{
   modelId: string
 }
 
+export interface NodeModel {
+    nodeId: string,
+    userId: string,
+    status: boolean,
+    nodeName: string,
+    assignedModels: string[]
+}
+
 // Redux State interface
 export interface ModelSortState {
   sortBy: string;

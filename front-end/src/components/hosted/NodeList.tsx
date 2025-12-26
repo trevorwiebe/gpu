@@ -3,14 +3,7 @@ import {
 } from '../../store';
 
 import { useUser } from "@clerk/clerk-react";
-
-interface NodeModel {
-    nodeId: string,
-    userId: string,
-    status: boolean,
-    nodeName: string,
-    assignedModels: string[]
-}
+import { NodeModel } from "@/types"
 
 export default function NodeList(){
 

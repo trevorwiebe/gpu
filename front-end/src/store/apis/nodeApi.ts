@@ -30,6 +30,14 @@ const nodeApi = createApi({
                     }
                 },
                 providesTags: ['node']
+            }),
+            assignModelToNode: build.mutation({
+                query: ({userId, nodeId, modelId}) => ({
+                    url: '/user/me/node/assign-model',
+                    method: 'POST',
+                    body: { userId, nodeId, modelId }
+                }),
+                invalidatesTags: ['node']
             })
         }
     }
@@ -37,6 +45,7 @@ const nodeApi = createApi({
 
 export const {
     useAuthenticateNodeMutation,
-    useFetchNodesQuery
+    useFetchNodesQuery,
+    useAssignModelToNodeMutation
  } = nodeApi;
 export { nodeApi };

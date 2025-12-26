@@ -1,14 +1,17 @@
-import { 
-    useFetchLibraryQuery
+import {
+    useFetchLibraryQuery,
+    useFetchNodesQuery,
+    useAssignModelToNodeMutation
 } from '../../store';
 
 import { useUser } from "@clerk/clerk-react";
+import AssignModel from './AssignModel';
 
 interface LibraryModel {
     id: string,
     userId: string,
     modelId: string,
-    modelName: String,
+    modelName: string,
     health: boolean
 }
 export default function LibraryModelList(){
@@ -21,8 +24,30 @@ export default function LibraryModelList(){
         isLoading: libraryLoading
     } = useFetchLibraryQuery(user?.id, {skip: !user?.id});
 
+    const {
+        data: nodes,
+        error: nodesError,
+        isLoading: nodesLoading
+    } = useFetchNodesQuery(user?.id, {skip: !user?.id});
+
+    const [assignModelToNode] = useAssignModelToNodeMutation();
+
     // if the user is not signed in, we don't want to show this
     if(!isSignedIn) return null
+
+    const createNodeSelectHandler = (modelId: string) => async (nodeId: string) => {
+        if (!user?.id) return;
+
+        try {
+            await assignModelToNode({
+                userId: user.id,
+                nodeId,
+                modelId
+            }).unwrap();
+        } catch (error) {
+            console.error('Failed to assign model:', error);
+        }
+    };
 
     var renderedContent;
 
@@ -36,8 +61,17 @@ export default function LibraryModelList(){
         renderedContent = library.map((model: LibraryModel) => {
             return (
                 <div key={model.id} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
-                    <p>{model.modelName}</p>
-                    <p className='text-gray-500 text-xs'>Model Id: {model.modelId}</p>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p>{model.modelName}</p>
+                            <p className='text-gray-500 text-xs'>Model Id: {model.modelId}</p>
+                        </div>
+                        <AssignModel
+                            modelId={model.modelId}
+                            nodes={nodes || []}
+                            onNodeSelected={createNodeSelectHandler(model.modelId)}
+                        />
+                    </div>
                 </div>
             );
         });

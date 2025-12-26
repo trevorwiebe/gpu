@@ -37,5 +37,6 @@ export {
 
 export {
     useAuthenticateNodeMutation,
-    useFetchNodesQuery
+    useFetchNodesQuery,
+    useAssignModelToNodeMutation
 } from './apis/nodeApi';
