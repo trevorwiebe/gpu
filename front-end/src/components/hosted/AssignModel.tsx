@@ -55,13 +55,13 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
 
     if (nodes.length === 0) {
         nodeMenu = (
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="p-4 text-gray-500">No authenticated nodes</div>
             </div>
         );
     } else {
         nodeMenu = (
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 {nodes.map((node) => {
                     // Check if this node already has this model assigned
                     const isAssigned = node.assignedModels.includes(modelId);
@@ -101,7 +101,7 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
 
             {selectedNodeId && (
                 <Button
-                    title="Confirm"
+                    title={`Confirm ${nodes.find(node => node.nodeId === selectedNodeId)?.nodeName || ''}`}
                     onClick={handleNodeSelect}
                     className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:border-green-800 ml-2"
                 />
