@@ -1,5 +1,5 @@
-import HardwareList from "./hosted/HardwareList"
-import HostedModelsList from "./hosted/HostedModelsList"
+import HardwareList from "./hosted/NodeList"
+import HostedModelsList from "./hosted/LibraryModelList"
 
 export default function Hosted() {
     return (

@@ -11,7 +11,7 @@ interface LibraryModel {
     modelId: string,
     health: boolean
 }
-export default function HostedModelsList(){
+export default function LibraryModelList(){
 
     const { user, isSignedIn } = useUser();
 
@@ -38,7 +38,7 @@ export default function HostedModelsList(){
 
     return (
         <div className="my-4 p-4">
-            <h2 className="text-xl font-bold mb-4">My Hosted Models</h2>
+            <h2 className="text-xl font-bold mb-4">My Library Models</h2>
             {renderedLibrary}
         </div>
     )
