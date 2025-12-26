@@ -36,7 +36,7 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
     if (nodes.length === 0) {
         nodeMenu = (
             <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                <div className="p-4 text-center text-gray-500">No nodes available</div>
+                <div className="p-4 text-gray-500">No authenticated nodes</div>
             </div>
         );
     } else {
