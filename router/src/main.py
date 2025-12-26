@@ -10,7 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from routers import completion, library
+from routers.users.me import library
+from routers.users.me import node
+from routers import completion
 
 app = FastAPI(title="GPU Router", version="1.0.0")
 
@@ -26,6 +28,7 @@ app.add_middleware(
 # Include routers
 app.include_router(completion.router)
 app.include_router(library.router)
+app.include_router(node.router)
 
 # Configuration
 NODE_URL = os.getenv("NODE_URL", "http://node:8005")

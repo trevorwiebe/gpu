@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 import redis
+from pydantic import BaseModel
 
 from models.library import SetModelRequest
 
@@ -79,3 +80,4 @@ async def get_library(userId: str):
             status_code=500,
             detail=f"An unexpected error occurred: {str(e)}"
         ) from e
+
