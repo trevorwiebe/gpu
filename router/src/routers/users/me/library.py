@@ -24,8 +24,7 @@ async def set_model(request: SetModelRequest):
                     "id": request.modelId,
                     "userId": request.userId,
                     "modelName": request.modelName,
-                    "modelId": request.modelId,
-                    "health": "active"
+                    "modelId": request.modelId
                 }
             )
             pipe.sadd(f'user:{request.userId}:models', request.modelId)

@@ -11,3 +11,8 @@ class Node(BaseModel):
 class AuthenticateNodeRequest(BaseModel):
     setupToken: str
     userId: str
+
+class AssignModelToNodeRequest(BaseModel):
+    userId: str
+    nodeId: str
+    modelId: str

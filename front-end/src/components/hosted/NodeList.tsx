@@ -8,7 +8,8 @@ interface NodeModel {
     nodeId: string,
     userId: string,
     status: boolean,
-    nodeName: string
+    nodeName: string,
+    assignedModels: string[]
 }
 
 export default function NodeList(){
@@ -34,9 +35,11 @@ export default function NodeList(){
     } else {
         renderedContent = nodeData.map((node: NodeModel) => {
             return (
-                <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-full">
+                <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-[3vw]">
                     <p className="font-semibold">{node.nodeName}</p>
                     <p className='text-gray-500 text-xs'>Status: {node.status}</p>
+                    <p className='text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
+                    <p className='text-gray-500 text-xs'>Assigned Models: {node.assignedModels}</p>
                 </div>
             );
         });

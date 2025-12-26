@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import redis
 
-from models.node import AuthenticateNodeRequest
+from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 
 router = APIRouter(
     prefix="/user/me",
@@ -29,6 +29,11 @@ async def get_nodes(userId: str):
             if node_data:
                 # Include the node_id in the response
                 node_data['nodeId'] = node_id
+
+                # Include assigned models
+                assigned_models = client.smembers(f'node:{node_id}:models')
+                node_data['assignedModels'] = list(assigned_models) if assigned_models else []
+
                 nodes.append(node_data)
 
         return nodes
@@ -113,4 +118,72 @@ async def authenticate_node(request: AuthenticateNodeRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Authentication failed: {str(e)}"
+        ) from e
+
+@router.post("/node/assign-model")
+async def assign_model_to_node(request: AssignModelToNodeRequest):
+    """Assign a model from the user's library to a node"""
+    try:
+        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+        # Verify user owns the node
+        user_nodes = client.smembers(f'user:{request.userId}:nodes')
+        if request.nodeId not in user_nodes:
+            raise HTTPException(
+                status_code=404,
+                detail="Node not found or does not belong to user"
+            )
+
+        # Verify node exists
+        node_data = client.hgetall(f'node:{request.nodeId}')
+        if not node_data:
+            raise HTTPException(
+                status_code=404,
+                detail="Node not found"
+            )
+
+        # Verify user owns the model
+        user_models = client.smembers(f'user:{request.userId}:models')
+        if request.modelId not in user_models:
+            raise HTTPException(
+                status_code=404,
+                detail="Model not found in user's library"
+            )
+
+        # Verify model exists and is healthy
+        model_data = client.hgetall(f'model:{request.modelId}')
+        if not model_data:
+            raise HTTPException(
+                status_code=404,
+                detail="Model not found"
+            )
+
+        # Check if model is already assigned to this node
+        if client.sismember(f'node:{request.nodeId}:models', request.modelId):
+            raise HTTPException(
+                status_code=400,
+                detail="Model is already assigned to this node"
+            )
+
+        # Assign the model to the node (using a set to support multiple models)
+        client.sadd(f'node:{request.nodeId}:models', request.modelId)
+
+        return {
+            "status": "success",
+            "message": "Model assigned to node successfully",
+            "nodeId": request.nodeId,
+            "modelId": request.modelId
+        }
+
+    except redis.exceptions.ConnectionError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Redis service unavailable: {str(e)}"
+        ) from e
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
         ) from e

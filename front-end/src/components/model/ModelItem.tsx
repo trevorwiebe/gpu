@@ -28,7 +28,7 @@ export default function ModelItem(props: ModelItemProps) {
     />
     
     return (
-        <div className="rounded-full shadow-sm p-4 m-2">
+        <div className="rounded-[3vw] shadow-sm p-4 m-2">
             <div className='flex flex-box justify-between'>
                 <p className="mb-2">{id}</p>
                 <div>

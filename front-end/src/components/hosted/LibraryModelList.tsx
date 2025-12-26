@@ -35,7 +35,7 @@ export default function LibraryModelList(){
     } else {
         renderedContent = library.map((model: LibraryModel) => {
             return (
-                <div key={model.id} className="bg-gray-200 my-2 p-4 rounded-full">
+                <div key={model.id} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
                     <p>{model.modelName}</p>
                     <p className='text-gray-500 text-xs'>Model Id: {model.modelId}</p>
                 </div>
