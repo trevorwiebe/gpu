@@ -111,12 +111,32 @@ currently_active_model_id = None  # For single-model mode
 node_id = str(uuid.uuid4())
 node_authenticated = False
 node_user_id = None
-node_model_status = "idle"  # Values: "idle", "downloading", "loading", "ready", "error"
+node_model_status = "idle"
 
 # Redis connection
 def get_redis_client():
     """Get Redis client connection"""
     return redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+
+def update_node_status_in_redis(status: str, model_id: str = "", model_name: str = ""):
+    """
+    Update the node's model status in Redis
+
+    Args:
+        status: The status to set ("idle", "downloading", "loading", "ready", "error")
+        model_id: The model ID (optional, empty string for idle/error states)
+        model_name: The model name (optional, empty string for idle/error states)
+    """
+    try:
+        client = get_redis_client()
+        client.hset(f'node:{node_id}', mapping={
+            "modelStatus": status,
+            "activeModel": model_id,
+            "activeModelName": model_name
+        })
+        logging.debug(f"Updated Redis: modelStatus={status}, activeModel={model_id}")
+    except Exception as e:
+        logging.warning(f"Failed to update Redis with status '{status}': {e}")
 
 def check_authentication_status():
     """Check if node has been authenticated via Redis"""
@@ -196,19 +216,11 @@ async def poll_for_model_assignments():
                 # Load the new model
                 success = load_model(target_model_id, model_name)
 
-                # Update node status in Redis
+                # Update node status in Redis (redundant but ensures consistency)
                 if success:
-                    client.hset(f'node:{node_id}', mapping={
-                        "modelStatus": "ready",
-                        "activeModel": target_model_id,
-                        "activeModelName": model_name
-                    })
+                    update_node_status_in_redis("ready", target_model_id, model_name)
                 else:
-                    client.hset(f'node:{node_id}', mapping={
-                        "modelStatus": "error",
-                        "activeModel": "",
-                        "activeModelName": ""
-                    })
+                    update_node_status_in_redis("error", "", "")
 
         except Exception as e:
             logging.error(f"Error in polling loop: {str(e)}")
@@ -255,6 +267,7 @@ def load_model(model_id: str, model_name: str) -> bool:
 
     try:
         node_model_status = "downloading"
+        update_node_status_in_redis("downloading", model_id, model_name)
         model_path = f"/models/{model_name}"
 
         # Download model if not exists
@@ -269,9 +282,11 @@ def load_model(model_id: str, model_name: str) -> bool:
             if result.returncode != 0:
                 logging.error(f"Failed to download model: {result.stderr}")
                 node_model_status = "error"
+                update_node_status_in_redis("error", "", "")
                 return False
 
         node_model_status = "loading"
+        update_node_status_in_redis("loading", model_id, model_name)
         device = get_device()
         logging.info(f"Loading model {model_name} from {model_path}...")
         logging.info(f"Using device: {device}")
@@ -309,13 +324,14 @@ def load_model(model_id: str, model_name: str) -> bool:
             logging.info("Loading model for CPU...")
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float32
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
+                device_map="auto"
             )
             generator = pipeline(
                 "text-generation",
                 model=model,
-                tokenizer=tokenizer,
-                device=device
+                tokenizer=tokenizer
             )
 
         # Store in loaded_models dictionary
@@ -328,6 +344,7 @@ def load_model(model_id: str, model_name: str) -> bool:
 
         currently_active_model_id = model_id
         node_model_status = "ready"
+        update_node_status_in_redis("ready", model_id, model_name)
 
         logging.info(f"Model {model_name} loaded successfully!")
         logging.info(f"Model device: {model.device}")
@@ -337,6 +354,7 @@ def load_model(model_id: str, model_name: str) -> bool:
     except Exception as e:
         logging.error(f"Failed to load model {model_name}: {str(e)}")
         node_model_status = "error"
+        update_node_status_in_redis("error", "", "")
         return False
 
 def unload_model(model_id: str):
@@ -441,13 +459,7 @@ async def get_setup_info():
     setup_url = f"http://localhost:5173/setup/{setup_token}"
 
     return {
-        "authenticated": False,
-        "nodeId": node_id,
-        "nodeName": node_name,
-        "setupToken": setup_token,
-        "setupUrl": setup_url,
-        "message": "Visit the setup URL to authenticate this node",
-        "qrCodeData": setup_url  # Frontend can generate QR code from this
+        "qrCodeData": setup_url
     }
 
 @app.post("/generate", response_model=GenerateResponse)
