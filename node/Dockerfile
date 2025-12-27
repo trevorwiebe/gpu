@@ -39,6 +39,7 @@ WORKDIR /app
 
 # Copy application code
 COPY *.py .
+COPY models/ ./models/
 
 # Expose port
 EXPOSE 8005

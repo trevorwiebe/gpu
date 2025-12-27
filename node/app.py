@@ -5,9 +5,7 @@ import torch
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from typing import Optional
 import uvicorn
 import logging
 
@@ -15,28 +13,11 @@ import setup
 from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status
 import state
 
+from models.models import GenerateRequest, GenerateResponse
+
 # Configuration
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
 DEVICE_OVERRIDE = os.getenv("DEVICE_OVERRIDE", None)
-
-# Pydantic models
-class GenerateRequest(BaseModel):
-    prompt: str
-    max_new_tokens: int = 512
-    temperature: float = 0.7
-    do_sample: bool = True
-
-class GenerateResponse(BaseModel):
-    generated_text: str
-    model: str
-
-class AuthenticateRequest(BaseModel):
-    userId: str
-
-class NodeStatusResponse(BaseModel):
-    authenticated: bool
-    userId: Optional[str] = None
-    nodeId: Optional[str] = None
 
 logging.basicConfig(level=logging.INFO)
 
