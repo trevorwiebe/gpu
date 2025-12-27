@@ -12,5 +12,3 @@ redis-cli -h localhost -p 6379 --scan --pattern "setup_token_name:*" | xargs -r 
 
 docker-compose build node
 docker-compose up -d node
-
-docker-compose logs -f node
