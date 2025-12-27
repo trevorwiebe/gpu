@@ -9,7 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import uvicorn
 import logging
 
-import setup
+import routers.setup as setup
 from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status
 import state
 

@@ -40,6 +40,7 @@ WORKDIR /app
 # Copy application code
 COPY *.py .
 COPY models/ ./models/
+COPY routers/ ./routers/
 
 # Expose port
 EXPOSE 8005
