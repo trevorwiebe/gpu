@@ -19,5 +19,3 @@ docker run -d \
     -p $PORT:8005 \
     -e ROUTER_API_KEY=secure-router-key-123 \
     gpu-node:latest
-
-echo "Node started on port $PORT"
