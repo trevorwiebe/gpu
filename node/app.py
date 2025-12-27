@@ -22,7 +22,7 @@ DEVICE_OVERRIDE = os.getenv("DEVICE_OVERRIDE", None)
 logging.basicConfig(level=logging.INFO)
 
 # Initialize FastAPI app
-app = FastAPI(title="SmolLM2 Server", version="1.0.0")
+app = FastAPI(title="Node", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
