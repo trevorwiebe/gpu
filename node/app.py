@@ -185,6 +185,7 @@ async def poll_for_model_assignments():
                     for model_id in list(loaded_models.keys()):
                         unload_model(model_id)
                     node_model_status = "idle"
+                currently_active_model_id = None  # Clear to allow retry if model reassigned
                 await asyncio.sleep(POLL_INTERVAL)
                 continue
 
@@ -221,6 +222,9 @@ async def poll_for_model_assignments():
                     update_node_status_in_redis("ready", target_model_id, model_name)
                 else:
                     update_node_status_in_redis("error", "", "")
+                    # Mark as attempted to prevent infinite retry loop
+                    # Will only retry if model is unassigned then reassigned
+                    currently_active_model_id = target_model_id
 
         except Exception as e:
             logging.error(f"Error in polling loop: {str(e)}")
@@ -324,7 +328,7 @@ def load_model(model_id: str, model_name: str) -> bool:
             logging.info("Loading model for CPU...")
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float16,
+                dtype=torch.float16,
                 low_cpu_mem_usage=True,
                 device_map="auto"
             )
