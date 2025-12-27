@@ -38,7 +38,7 @@ RUN mkdir -p /models
 WORKDIR /app
 
 # Copy application code
-COPY app.py .
+COPY *.py .
 
 # Expose port
 EXPOSE 8005

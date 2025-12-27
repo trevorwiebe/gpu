@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-"""
-Generic LLM Node Server - GPU Optimized
-FastAPI server that serves LLM models with automatic GPU detection
-"""
 
 import os
 import torch
 from fastapi.responses import JSONResponse
-import redis
-import uuid
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,26 +10,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from typing import Optional
 import uvicorn
 import logging
-import random
 
-# Nature-themed word lists for node names
-NATURE_ADJECTIVES = [
-    "mountain", "forest", "ocean", "river", "meadow", "valley",
-    "canyon", "glacier", "coral", "desert", "prairie", "tundra",
-    "alpine", "coastal", "highland", "woodland", "wetland", "volcanic"
-]
-
-NATURE_NOUNS = [
-    "stream", "breeze", "tide", "mist", "bloom", "shadow",
-    "light", "dawn", "dusk", "storm", "rain", "snow",
-    "wind", "wave", "cloud", "thunder", "frost", "ember"
-]
-
-def generate_node_name():
-    """Generate a random nature-themed node name"""
-    adjective = random.choice(NATURE_ADJECTIVES)
-    noun = random.choice(NATURE_NOUNS)
-    return f"{adjective}-{noun}"
+import setup
+from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status
+import state
 
 # Configuration
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
@@ -74,6 +52,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(setup.router)
+
 # API Key Authentication Middleware
 @app.middleware("http")
 async def verify_api_key(request: Request, call_next):
@@ -107,85 +88,33 @@ async def verify_api_key(request: Request, call_next):
 loaded_models = {}
 currently_active_model_id = None  # For single-model mode
 
-# Global variables for node authentication
-node_id = str(uuid.uuid4())
-node_authenticated = False
-node_user_id = None
-node_model_status = "idle"
-
-# Redis connection
-def get_redis_client():
-    """Get Redis client connection"""
-    return redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
-
-def update_node_status_in_redis(status: str, model_id: str = "", model_name: str = ""):
-    """
-    Update the node's model status in Redis
-
-    Args:
-        status: The status to set ("idle", "downloading", "loading", "ready", "error")
-        model_id: The model ID (optional, empty string for idle/error states)
-        model_name: The model name (optional, empty string for idle/error states)
-    """
-    try:
-        client = get_redis_client()
-        client.hset(f'node:{node_id}', mapping={
-            "modelStatus": status,
-            "activeModel": model_id,
-            "activeModelName": model_name
-        })
-        logging.debug(f"Updated Redis: modelStatus={status}, activeModel={model_id}")
-    except Exception as e:
-        logging.warning(f"Failed to update Redis with status '{status}': {e}")
-
-def check_authentication_status():
-    """Check if node has been authenticated via Redis"""
-    global node_authenticated, node_user_id
-
-    if node_authenticated:
-        return True
-
-    try:
-        client = get_redis_client()
-        node_data = client.hgetall(f'node:{node_id}')
-
-        if node_data and node_data.get('userId'):
-            node_authenticated = True
-            node_user_id = node_data.get('userId')
-            return True
-
-        return False
-    except:
-        return False
-
 async def poll_for_model_assignments():
     """
     Continuously poll Redis for model assignments
     Only starts polling after node is authenticated
     """
     import asyncio
-    global node_authenticated, node_model_status
 
     POLL_INTERVAL = 5  # seconds
 
     while True:
         try:
             # Wait until authenticated
-            if not check_authentication_status():
+            if not is_node_authenticated(state.node_id):
                 await asyncio.sleep(POLL_INTERVAL)
                 continue
 
             # Check for assigned models in Redis
             client = get_redis_client()
-            assigned_model_ids = client.smembers(f'node:{node_id}:models')
+            assigned_model_ids = client.smembers(f'node:{state.node_id}:models')
 
             if not assigned_model_ids:
                 # No models assigned - unload any loaded models and go idle
                 if loaded_models:
                     for model_id in list(loaded_models.keys()):
                         unload_model(model_id)
-                    node_model_status = "idle"
-                currently_active_model_id = None  # Clear to allow retry if model reassigned
+                    update_node_status_in_redis(state.node_id, "idle")
+                currently_active_model_id = None
                 await asyncio.sleep(POLL_INTERVAL)
                 continue
 
@@ -219,9 +148,9 @@ async def poll_for_model_assignments():
 
                 # Update node status in Redis (redundant but ensures consistency)
                 if success:
-                    update_node_status_in_redis("ready", target_model_id, model_name)
+                    update_node_status_in_redis(state.node_id, "ready", target_model_id, model_name)
                 else:
-                    update_node_status_in_redis("error", "", "")
+                    update_node_status_in_redis(state.node_id, "error", "", "")
                     # Mark as attempted to prevent infinite retry loop
                     # Will only retry if model is unassigned then reassigned
                     currently_active_model_id = target_model_id
@@ -261,7 +190,7 @@ def load_model(model_id: str, model_name: str) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
-    global loaded_models, currently_active_model_id, node_model_status
+    global loaded_models, currently_active_model_id
 
     # Check if already loaded
     if model_id in loaded_models:
@@ -270,8 +199,7 @@ def load_model(model_id: str, model_name: str) -> bool:
         return True
 
     try:
-        node_model_status = "downloading"
-        update_node_status_in_redis("downloading", model_id, model_name)
+        update_node_status_in_redis(state.node_id, "downloading", model_id, model_name)
         model_path = f"/models/{model_name}"
 
         # Download model if not exists
@@ -285,12 +213,10 @@ def load_model(model_id: str, model_name: str) -> bool:
             )
             if result.returncode != 0:
                 logging.error(f"Failed to download model: {result.stderr}")
-                node_model_status = "error"
-                update_node_status_in_redis("error", "", "")
+                update_node_status_in_redis(state.node_id, "error", "", "")
                 return False
 
-        node_model_status = "loading"
-        update_node_status_in_redis("loading", model_id, model_name)
+        update_node_status_in_redis(state.node_id, "loading", model_id, model_name)
         device = get_device()
         logging.info(f"Loading model {model_name} from {model_path}...")
         logging.info(f"Using device: {device}")
@@ -347,8 +273,7 @@ def load_model(model_id: str, model_name: str) -> bool:
         }
 
         currently_active_model_id = model_id
-        node_model_status = "ready"
-        update_node_status_in_redis("ready", model_id, model_name)
+        update_node_status_in_redis(state.node_id, "ready", model_id, model_name)
 
         logging.info(f"Model {model_name} loaded successfully!")
         logging.info(f"Model device: {model.device}")
@@ -357,8 +282,7 @@ def load_model(model_id: str, model_name: str) -> bool:
 
     except Exception as e:
         logging.error(f"Failed to load model {model_name}: {str(e)}")
-        node_model_status = "error"
-        update_node_status_in_redis("error", "", "")
+        update_node_status_in_redis(state.node_id, "error", "", "")
         return False
 
 def unload_model(model_id: str):
@@ -390,11 +314,10 @@ async def startup_event():
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
     return {
         "status": "healthy",
-        "node_status": node_model_status,
-        "authenticated": node_authenticated,
+        "node_status": get_node_model_status(state.node_id),
+        "authenticated": is_node_authenticated(state.node_id),
         "model_loaded": currently_active_model_id is not None,
         "active_model": currently_active_model_id,
         "device": get_device(),
@@ -417,61 +340,9 @@ async def device_info():
         "device_override": DEVICE_OVERRIDE
     }
 
-@app.get("/setup")
-async def get_setup_info():
-    """
-    Get setup information for node authentication
-    Returns authentication status and setup URL if not authenticated
-    """
-
-    # Check if already authenticated
-    if check_authentication_status():
-        return {
-            "authenticated": True,
-            "userId": node_user_id,
-            "nodeId": node_id,
-            "message": "Node is already authenticated"
-        }
-
-    # Generate setup token if not exists
-    setup_token = str(uuid.uuid4())
-
-    # Generate nature-themed node name
-    node_name = generate_node_name()
-
-    try:
-        client = get_redis_client()
-        # Store setup token in Redis with pending status (expires in 1 hour)
-        client.setex(
-            f'setup_token:{setup_token}',
-            3600,  # 1 hour expiry
-            node_id
-        )
-        # Store node name alongside setup token
-        client.setex(
-            f'setup_token_name:{setup_token}',
-            3600,  # 1 hour expiry
-            node_name
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate setup token: {str(e)}"
-        )
-
-    # Generate setup URL (adjust domain as needed)
-    setup_url = f"http://localhost:5173/setup/{setup_token}"
-
-    return {
-        "qrCodeData": setup_url
-    }
-
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_text(request: GenerateRequest):
-    """Generate text using LLM"""
-
-    # Check if authenticated
-    if not node_authenticated:
+    if not is_node_authenticated(state.node_id):
         raise HTTPException(status_code=403, detail="Node not authenticated")
 
     # Check if a model is loaded
