@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import torch
+import torch #type: ignore
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +10,7 @@ import uvicorn
 import logging
 
 import routers.setup as setup
+import routers.info as info
 from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status
 import state
 
@@ -17,7 +18,6 @@ from models.models import GenerateRequest, GenerateResponse
 
 # Configuration
 ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
-DEVICE_OVERRIDE = os.getenv("DEVICE_OVERRIDE", None)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,13 +35,14 @@ app.add_middleware(
 
 # Include routers
 app.include_router(setup.router)
+app.include_router(info.router)
 
 # API Key Authentication Middleware
 @app.middleware("http")
 async def verify_api_key(request: Request, call_next):
     """Verify API key for all requests except health and setup endpoints"""
     # Allow localhost setup endpoints without API key
-    if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/setup", "/setup/authenticate", "/setup/status"]:
+    if request.url.path in ["/", "/info", "/docs", "/openapi.json", "/setup", "/setup/authenticate", "/setup/status"]:
         # For setup endpoints, only allow localhost
         if request.url.path.startswith("/setup"):
             client_host = request.client.host if request.client else None
@@ -142,22 +143,10 @@ async def poll_for_model_assignments():
         await asyncio.sleep(POLL_INTERVAL)
 
 def get_device():
-    """Detect the best available device with fallback"""
-    if DEVICE_OVERRIDE:
-        print(f"Using device override: {DEVICE_OVERRIDE}")
-        return DEVICE_OVERRIDE
-    
-    if torch.cuda.is_available():
-        device_count = torch.cuda.device_count()
-        if device_count > 0:
-            print(f"GPU detected: {device_count} CUDA devices")
-            return "cuda"
-    
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        return "cuda"
     if torch.backends.mps.is_available():
-        print("MPS (Apple Silicon) detected")
         return "mps"
-    
-    print("No GPU detected, using CPU")
     return "cpu"
 
 def load_model(model_id: str, model_name: str) -> bool:
@@ -293,33 +282,6 @@ async def startup_event():
     asyncio.create_task(poll_for_model_assignments())
     logging.info("Node started in idle mode - waiting for authentication and model assignment")
 
-@app.get("/health")
-async def health():
-    return {
-        "status": "healthy",
-        "node_status": get_node_model_status(state.node_id),
-        "authenticated": is_node_authenticated(state.node_id),
-        "model_loaded": currently_active_model_id is not None,
-        "active_model": currently_active_model_id,
-        "device": get_device(),
-        "loaded_models_count": len(loaded_models)
-    }
-
-@app.get("/device")
-async def device_info():
-    """Device information endpoint"""
-    device = get_device()
-    current_device = None
-    if currently_active_model_id and currently_active_model_id in loaded_models:
-        current_device = str(loaded_models[currently_active_model_id]["model"].device)
-    return {
-        "device": device,
-        "cuda_available": torch.cuda.is_available(),
-        "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
-        "mps_available": torch.backends.mps.is_available(),
-        "current_device": current_device,
-        "device_override": DEVICE_OVERRIDE
-    }
 
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_text(request: GenerateRequest):
