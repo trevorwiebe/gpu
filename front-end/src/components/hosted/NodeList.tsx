@@ -13,7 +13,10 @@ export default function NodeList(){
         data: nodeData,
         error: nodeError,
         isLoading: nodesLoading
-    } = useFetchNodesQuery(user?.id, {skip: !user?.id});
+    } = useFetchNodesQuery(user?.id, {
+        skip: !user?.id,
+        pollingInterval: 15000
+    });
 
     if(!isSignedIn) return null
 
