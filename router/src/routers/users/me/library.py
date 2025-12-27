@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 import redis
-from pydantic import BaseModel
 
 from models.library import SetModelRequest
 
