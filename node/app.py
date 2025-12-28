@@ -14,13 +14,10 @@ import logging
 import routers.setup as setup
 import routers.info as info
 import routers.generate as generate
-from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status
+from utils import get_redis_client, update_node_status_in_redis, is_node_authenticated, get_node_model_status, get_node_api_key
 import state
 
 from models.models import GenerateRequest, GenerateResponse
-
-# Configuration
-ROUTER_API_KEY = os.getenv("ROUTER_API_KEY", "secure-router-key-123")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,23 +47,35 @@ app.include_router(generate.router)
 # API Key Authentication Middleware
 @app.middleware("http")
 async def verify_api_key(request: Request, call_next):
-    """Verify API key for all requests except health and setup endpoints"""
-    # Allow localhost setup endpoints without API key
-    if request.url.path in ["/", "/info", "/docs", "/openapi.json", "/setup", "/setup/authenticate", "/setup/status"]:
-        # For setup endpoints, only allow localhost
-        if request.url.path.startswith("/setup"):
-            client_host = request.client.host if request.client else None
-            logging.info(client_host)
-            if client_host not in ["127.0.0.1", "localhost", "::1", "192.168.65.1"]:
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={"detail": "Setup endpoints only accessible from localhost"}
-                )
+    """Verify API key for all requests except docs and setup endpoints"""
+    # Public endpoints - no API key required
+    if request.url.path in ["/", "/docs", "/openapi.json"]:
         response = await call_next(request)
         return response
 
+    # Setup endpoints - localhost only, no API key required
+    if request.url.path.startswith("/setup"):
+        client_host = request.client.host if request.client else None
+        logging.info(client_host)
+        if client_host not in ["127.0.0.1", "localhost", "::1", "192.168.65.1"]:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "Setup endpoints only accessible from localhost"}
+            )
+        response = await call_next(request)
+        return response
+
+    # All other endpoints require API key validation
     api_key = request.headers.get("X-API-Key")
-    if api_key != ROUTER_API_KEY:
+    expected_api_key = get_node_api_key(state.node_id)
+
+    if not expected_api_key:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Node not authenticated"}
+        )
+
+    if api_key != expected_api_key:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": "Invalid API key"}

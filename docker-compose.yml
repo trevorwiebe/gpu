@@ -12,7 +12,6 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - NODE_URL=http://node:8005
-      - NODE_API_KEY=secure-router-key-123
     depends_on:
       - node
 
@@ -25,8 +24,6 @@ services:
       - "8005:8005"
     networks:
       - gpu-net
-    environment:
-      - ROUTER_API_KEY=secure-router-key-123
 
 networks:
   gpu-net:

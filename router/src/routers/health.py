@@ -7,7 +7,7 @@ NODE_URL = os.getenv("NODE_URL", "http://node:8005")
 NODE_API_KEY = os.getenv("NODE_API_KEY", "secure-router-key-123")
 
 router = APIRouter(
-    prefix="/health",
+    prefix="",
     tags=["health"]
 )
 

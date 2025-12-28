@@ -7,7 +7,6 @@ import redis
 from models.completion import *
 
 NODE_URL = os.getenv("NODE_URL", "http://node:8005")
-NODE_API_KEY = os.getenv("NODE_API_KEY", "secure-router-key-123")
 
 router = APIRouter(
     prefix="/completions",
@@ -60,11 +59,16 @@ async def find_node_with_model(model_name_or_id: str) -> dict:
             if (node_data.get('activeModel') == model_id and
                 node_data.get('modelStatus') == 'ready'):
 
+                node_api_key = node_data.get('apiKey')
+                if not node_api_key:
+                    continue  # Skip nodes without API keys
+
                 return {
                     "nodeId": node_id,
                     "nodeUrl": "http://node:8005",  # All nodes on same Docker network
                     "modelId": model_id,
-                    "modelName": model_name
+                    "modelName": model_name,
+                    "apiKey": node_api_key
                 }
 
         # Model exists but not loaded on any ready node
@@ -93,8 +97,8 @@ async def completions(request: CompletionRequest):
         # Find node with the requested model
         node_info = await find_node_with_model(request.model)
 
-        # Prepare headers and request
-        headers = {"X-API-Key": NODE_API_KEY}
+        # Prepare headers with node-specific API key
+        headers = {"X-API-Key": node_info['apiKey']}
 
         # Automatically set do_sample based on temperature (OpenAI-style)
         # temperature=0 means deterministic (greedy), temperature>0 means sampling

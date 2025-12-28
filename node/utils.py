@@ -43,3 +43,12 @@ def get_node_model_status(node_id: str) -> str:
     except Exception as e:
         logging.warning(f"Failed to get model status: {e}")
         return 'idle'
+
+def get_node_api_key(node_id: str) -> Optional[str]:
+    try:
+        client = get_redis_client()
+        node_data = client.hgetall(f'node:{node_id}')
+        return node_data.get('apiKey')
+    except Exception as e:
+        logging.warning(f"Failed to get API key: {e}")
+        return None

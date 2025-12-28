@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 import redis
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
+from utils.crypto import generate_node_api_key
 
 router = APIRouter(
     prefix="/user/me",
@@ -91,6 +92,9 @@ async def authenticate_node(request: AuthenticateNodeRequest):
                 counter += 1
             node_name = f"{node_name}-{counter}"
 
+        # Generate unique API key for this node
+        node_api_key = generate_node_api_key(node_id)
+
         # Store node information in Redis
         node_data = {
             "nodeId": node_id,
@@ -99,7 +103,8 @@ async def authenticate_node(request: AuthenticateNodeRequest):
             "nodeName": node_name,
             "modelStatus": "idle",
             "activeModel": "",
-            "activeModelName": ""
+            "activeModelName": "",
+            "apiKey": node_api_key
         }
 
         # Store node data
