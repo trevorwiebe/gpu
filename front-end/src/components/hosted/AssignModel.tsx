@@ -64,7 +64,7 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
             <div className="absolute right-0 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 {nodes.map((node) => {
                     // Check if this node already has this model assigned
-                    const isAssigned = node.assignedModels.includes(modelId);
+                    const isAssigned = node.activeModelId == modelId
 
                     let className = "px-4 py-2 transition-colors duration-150";
 

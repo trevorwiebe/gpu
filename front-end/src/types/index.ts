@@ -36,7 +36,7 @@ export interface LibraryModel {
 export interface NodeModel {
     nodeId: string,
     userId: string,
-    status: boolean,
+    status: string,
     nodeName: string,
     activeModelId?: string,
     modelStatus?: string,

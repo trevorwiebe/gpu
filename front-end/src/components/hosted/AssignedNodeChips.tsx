@@ -7,7 +7,7 @@ interface AssignedNodeChipsProps {
 
 export default function AssignedNodeChips({ modelId, nodes }: AssignedNodeChipsProps) {
     // Find all nodes that have this model assigned
-    const assignedNodes = nodes.filter(node => node.assignedModels.includes(modelId));
+    const assignedNodes = nodes.filter(node => node.activeModelId == modelId);
 
     if (assignedNodes.length === 0) return null;
 
