@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 import redis
+import httpx #type: ignore
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 from utils.crypto import generate_node_api_key
@@ -36,7 +37,7 @@ async def get_nodes(userId: str):
                     "activeModelName": node_data.get('activeModelName'),
                     "activeModelId": node_data.get('activeModelId'),
                     "nodeId": node_data.get('nodeId'),
-                    "modelName": node_data.get('nodeName'),
+                    "nodeName": node_data.get('nodeName'),
                     "modelStatus": node_data.get('status')
                 }
                 nodes.append(single_node)
@@ -139,7 +140,7 @@ async def authenticate_node(request: AuthenticateNodeRequest):
 async def assign_model_to_node(request: AssignModelToNodeRequest):
     """Assign a model from the user's library to a node"""
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         # Verify node exists
         node_data = client.hgetall(f'node:{request.nodeId}')
@@ -173,18 +174,40 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
                 detail="Model not found in user's library"
             )
 
-        # Check if model is already assigned to this node
-        if client.sismember(f'node:{request.nodeId}:assignedModel', request.modelId):
+        # Call the node /assign-model endpoint
+        node_url = "http://gpu-node-1:8005"
+        payload = {
+            "modelName": request.modelName,
+            "nodeId": request.nodeId,
+            "modelId": request.modelId,
+            "huggingFaceModelId": request.huggingFaceModelId
+        }
+
+        # Get the node's API key for authentication
+        node_api_key = node_data.get('apiKey')
+        if not node_api_key:
             raise HTTPException(
-                status_code=400,
-                detail="Model is already assigned to this node"
+                status_code=500,
+                detail="Node API key not found"
             )
 
-        # Assign the model to the node
-        client.set(f'node:{request.nodeId}:models', request.modelId)
+        try:
+            async with httpx.AsyncClient() as http_client:
+                node_response = await http_client.post(
+                    f"{node_url}/assign-model",
+                    json=payload,
+                    headers={"X-API-Key": node_api_key},
+                    timeout=30.0
+                )
+                node_response.raise_for_status()
+        except httpx.HTTPError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to communicate with node: {str(e)}"
+            )
 
         response = {
-            "message": "Model assigned to node successfully",
+            "message": "Model assigned successfully. Node is starting setup.",
             "nodeId": request.nodeId,
             "modelId": request.modelId
         }
