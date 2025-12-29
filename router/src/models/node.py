@@ -3,6 +3,7 @@ Pydantic models for node endpoints
 """
 
 from pydantic import BaseModel
+from typing import Optional
 
 class Node(BaseModel):
     nodeId: str
@@ -16,5 +17,5 @@ class AssignModelToNodeRequest(BaseModel):
     userId: str
     nodeId: str
     modelId: str
-    modelName: str
-    huggingFaceModelId: str
+    modelName: Optional[str] = None
+    huggingFaceModelId: Optional[str] = None

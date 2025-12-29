@@ -38,7 +38,8 @@ async def get_nodes(userId: str):
                     "activeModelId": node_data.get('activeModelId'),
                     "nodeId": node_data.get('nodeId'),
                     "nodeName": node_data.get('nodeName'),
-                    "modelStatus": node_data.get('status')
+                    "status": node_data.get('status'),
+                    "modelStatus": node_data.get('modelStatus')
                 }
                 nodes.append(single_node)
 
@@ -176,11 +177,16 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
 
         # Call the node /assign-model endpoint
         node_url = "http://gpu-node-1:8005"
+
+        # Use provided values or look them up from Redis
+        model_name = request.modelName or model_data.get('modelName', '')
+        hugging_face_id = request.huggingFaceModelId or model_data.get('huggingFaceModelId', '')
+
         payload = {
-            "modelName": request.modelName,
+            "modelName": model_name,
             "nodeId": request.nodeId,
             "modelId": request.modelId,
-            "huggingFaceModelId": request.huggingFaceModelId
+            "huggingFaceModelId": hugging_face_id
         }
 
         # Get the node's API key for authentication
