@@ -102,7 +102,7 @@ async def authenticate_node(request: AuthenticateNodeRequest):
             "status": "active",
             "nodeName": node_name,
             "modelStatus": "idle",
-            "activeModel": "",
+            "activeModelId": "",
             "activeModelName": "",
             "apiKey": node_api_key
         }
@@ -175,14 +175,14 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
             )
 
         # Check if model is already assigned to this node
-        if client.sismember(f'node:{request.nodeId}:models', request.modelId):
+        if client.sismember(f'node:{request.nodeId}:assignedModel', request.modelId):
             raise HTTPException(
                 status_code=400,
                 detail="Model is already assigned to this node"
             )
 
-        # Assign the model to the node (using a set to support multiple models)
-        client.sadd(f'node:{request.nodeId}:models', request.modelId)
+        # Assign the model to the node
+        client.set(f'node:{request.nodeId}:models', request.modelId)
 
         return {
             "status": "success",

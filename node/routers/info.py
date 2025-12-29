@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-from utils import get_node_model_status, is_node_authenticated
-import state
+from utils import is_node_authenticated, get_node_details
 import app
 
 router = APIRouter(
@@ -10,12 +9,15 @@ router = APIRouter(
 
 @router.get("/info")
 async def info():
+
+    node_details = get_node_details(app.node_id)
+
     return {
-        "status": "healthy",
-        "node_status": get_node_model_status(state.node_id),
-        "authenticated": is_node_authenticated(state.node_id),
-        "model_loaded": app.currently_active_model_id is not None,
-        "active_model": app.currently_active_model_id,
-        "loaded_models_count": len(app.loaded_models),
+        "node_name": node_details.get('nodeName'),
+        "node_status": node_details.get('status'),
+        "active_model_name": node_details.get('activeModelName'),
+        "active_model_id": node_details.get('activeModelId'),
+        "model_status": node_details.get('modelStatus'),
+        "authenticated": is_node_authenticated(app.node_id),
         "device": app.get_device()
     }

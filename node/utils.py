@@ -10,10 +10,10 @@ def update_node_status_in_redis(node_id: str, status: str, model_id: str = "", m
         client = get_redis_client()
         client.hset(f'node:{node_id}', mapping={
             "modelStatus": status,
-            "activeModel": model_id,
+            "activeModelId": model_id,
             "activeModelName": model_name
         })
-        logging.debug(f"Updated Redis: modelStatus={status}, activeModel={model_id}")
+        logging.debug(f"Updated Redis: modelStatus={status}, activeModelId={model_id}")
     except Exception as e:
         logging.warning(f"Failed to update Redis with status '{status}': {e}")
 
@@ -35,15 +35,6 @@ def get_node_user_id(node_id: str) -> Optional[str]:
         logging.warning(f"Failed to get user ID: {e}")
         return None
 
-def get_node_model_status(node_id: str) -> str:
-    try:
-        client = get_redis_client()
-        node_data = client.hgetall(f'node:{node_id}')
-        return node_data.get('modelStatus', 'idle')
-    except Exception as e:
-        logging.warning(f"Failed to get model status: {e}")
-        return 'idle'
-
 def get_node_api_key(node_id: str) -> Optional[str]:
     try:
         client = get_redis_client()
@@ -52,3 +43,13 @@ def get_node_api_key(node_id: str) -> Optional[str]:
     except Exception as e:
         logging.warning(f"Failed to get API key: {e}")
         return None
+
+def get_node_details(node_id: str) -> dict:
+    try:
+        client = get_redis_client()
+        node_data = client.hgetall(f'node:{node_id}')
+        return node_data
+    except Exception as e:
+        logging.warning(f"Failed to get node details: {e}")
+        return {}
+

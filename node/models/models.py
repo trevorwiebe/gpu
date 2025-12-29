@@ -19,3 +19,9 @@ class NodeStatusResponse(BaseModel):
     authenticated: bool
     userId: Optional[str] = None
     nodeId: Optional[str] = None
+
+class AssignModel(BaseModel):
+    modelName: str
+    nodeId: str
+    modelId: str
+    huggingFaceModelId: str

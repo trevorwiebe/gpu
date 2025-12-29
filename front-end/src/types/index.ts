@@ -38,10 +38,9 @@ export interface NodeModel {
     userId: string,
     status: boolean,
     nodeName: string,
-    assignedModels: string[],
-    modelStatus?: string,      // "idle", "downloading", "loading", "ready", "error"
-    activeModel?: string,       // Currently active model ID
-    activeModelName?: string    // Currently active model name
+    activeModelId?: string,
+    modelStatus?: string,
+    activeModelName?: string
 }
 
 // Redux State interface

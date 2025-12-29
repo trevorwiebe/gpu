@@ -31,23 +31,14 @@ export default function NodeList(){
     } else {
         renderedContent = nodeData.map((node: NodeModel) => {
 
-            var nodes = node.assignedModels.map((modelId: string) => {
-                return <div>
-                    <p className='my-1 text-gray-500 text-xs'>{modelId}</p>
-                </div>
-            })
-
             return (
                 <div key={node.nodeId} className="my-2 p-4 bg-green-200 rounded-[3vw]">
-                    <p className="font-semibold">{node.nodeName}</p>
-                    <p className='my-1 text-gray-500 text-xs'>Status: {node.status}</p>
-                    <p className='my-1 text-gray-500 text-xs'>Model Status: {node.modelStatus || 'idle'}</p>
-                    {node.activeModelName && (
-                        <p className='my-1 text-gray-700 text-xs'>Active: {node.activeModelName}</p>
-                    )}
-                    <p className='my-1 text-gray-500 text-xs'>Node Id: {node.nodeId}</p>
-                    <p className='my-1 text-gray-700 text-xs'>Assigned models</p>
-                    {nodes}
+                    <p className="m-0 font-semibold">{node.nodeName}</p>
+                    <p className='mb-1 text-gray-500 text-xs'>{node.nodeId}</p>
+                    <p className='mb-3 text-gray-700 text-xs'>Node Status: {node.status}</p>
+                    <p className='my-1 text-gray-700 text-xs'>Model Status: {node.modelStatus || 'idle'}</p>
+                    <p className='my-1 text-gray-700 text-xs'>Model Name: {node.activeModelName}</p>
+                    <p className='my-1 text-gray-700 text-xs'>Model Id: {node.activeModelId}</p>
                 </div>
             );
         });
