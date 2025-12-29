@@ -8,7 +8,7 @@ import {
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
-import { Model, Library } from '../../types'
+import { Model, LibraryModel } from '../../types'
 
 import ModelItem from './ModelItem';
 import Loader from '../small/Loader';
@@ -66,8 +66,8 @@ export default function ModelsList() {
   if (modelLoading) return <Loader/>
   if (modelError) return <Error text={"Something went wrong"} />;
 
-  const inLibrary = (model: Model, library?: Library[]) => {
-    return library?.some(item => item.modelId === model._id) || false
+  const inLibrary = (model: Model, library?: LibraryModel[]) => {
+    return library?.some(item => item.huggingFaceModelId === model._id) || false
   }
 
   const handleSetInLibrary = async (model: Model, isSet: Boolean) => {

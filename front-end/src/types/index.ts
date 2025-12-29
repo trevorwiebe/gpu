@@ -25,10 +25,12 @@ export interface Model {
 }
 
 // User library object
-export interface Library{
-  id: string;
-  userId: string;
-  modelId: string
+export interface LibraryModel {
+    modelId: string,
+    userId: string,
+    huggingFaceModelId: string,
+    modelName: string,
+    health: boolean
 }
 
 export interface NodeModel {

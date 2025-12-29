@@ -17,13 +17,13 @@ export default function ModelItem(props: ModelItemProps) {
 
     const addToLibraryBtn = <Button 
         title="Add to Library" 
-        onClick={ () => props.onFavorite(props.model, !props.inLibrary)}
+        onClick={ () => props.onFavorite(props.model, true)}
         className="border-green-900 text-green-900 hover:bg-gray-200 hover:shadow-md"
     />
 
     const removeFromLibraryBtn = <Button 
         title="Remove from Library" 
-        onClick={ () => props.onFavorite(props.model, !props.inLibrary) }
+        onClick={ () => props.onFavorite(props.model, false) }
         className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:shadow-md"
     />
     

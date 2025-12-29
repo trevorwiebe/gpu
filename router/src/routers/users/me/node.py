@@ -142,14 +142,6 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
     try:
         client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
 
-        # Verify user owns the node
-        user_nodes = client.smembers(f'user:{request.userId}:nodes')
-        if request.nodeId not in user_nodes:
-            raise HTTPException(
-                status_code=404,
-                detail="Node not found or does not belong to user"
-            )
-
         # Verify node exists
         node_data = client.hgetall(f'node:{request.nodeId}')
         if not node_data:
@@ -157,21 +149,29 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
                 status_code=404,
                 detail="Node not found"
             )
-
-        # Verify user owns the model
-        user_models = client.smembers(f'user:{request.userId}:models')
-        if request.modelId not in user_models:
+        
+        # Verify user owns the node
+        user_nodes = client.smembers(f'user:{request.userId}:nodes')
+        if request.nodeId not in user_nodes:
             raise HTTPException(
                 status_code=404,
-                detail="Model not found in user's library"
+                detail="User does not own this node"
             )
 
-        # Verify model exists and is healthy
+        # Verify model exists
         model_data = client.hgetall(f'model:{request.modelId}')
         if not model_data:
             raise HTTPException(
                 status_code=404,
                 detail="Model not found"
+            )
+        
+        # Verify the model is in the users library
+        user_models = client.smembers(f'user:{request.userId}:models')
+        if request.modelId not in user_models:
+            raise HTTPException(
+                status_code=404,
+                detail="Model not found in user's library"
             )
 
         # Check if model is already assigned to this node

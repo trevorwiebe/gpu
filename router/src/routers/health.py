@@ -23,18 +23,17 @@ async def health():
                 headers=headers,
                 timeout=10.0
             )
-            
+            node_health = response.json()
             if response.status_code == 200:
-                node_health = response.json()
                 return {
                     "status": "healthy",
-                    "node_status": node_health,
+                    "node_repsonse": node_health,
                     "node_url": NODE_URL
                 }
             else:
                 return {
                     "status": "degraded",
-                    "node_status": "unreachable",
+                    "node_response": node_health,
                     "node_url": NODE_URL
                 }
                 

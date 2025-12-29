@@ -8,13 +8,8 @@ import { useUser } from "@clerk/clerk-react";
 import AssignModel from './AssignModel';
 import AssignedNodeChips from './AssignedNodeChips';
 
-interface LibraryModel {
-    id: string,
-    userId: string,
-    modelId: string,
-    modelName: string,
-    health: boolean
-}
+import { LibraryModel } from '../../types'
+
 export default function LibraryModelList(){
 
     const { user, isSignedIn } = useUser();
@@ -61,11 +56,12 @@ export default function LibraryModelList(){
     } else {
         renderedContent = library.map((model: LibraryModel) => {
             return (
-                <div key={model.id} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
+                <div key={model.modelId} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
                     <div className="flex justify-between items-start">
                         <div>
                             <p>{model.modelName}</p>
                             <p className='text-gray-500 text-xs'>Model Id: {model.modelId}</p>
+                            <p className='text-gray-500 text-xs'>Hugging Face Model Id: {model.huggingFaceModelId}</p>
                             <AssignedNodeChips
                                 modelId={model.modelId}
                                 nodes={nodes || []}
