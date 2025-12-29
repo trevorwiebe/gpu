@@ -41,7 +41,7 @@ node_id = str(uuid.uuid4())
 async def verify_api_key(request: Request, call_next):
     """Verify API key for all requests except docs and setup endpoints"""
     # Public endpoints - no API key required
-    if request.url.path in ["/", "/docs", "/assign-model", "/info", "/openapi.json"]:
+    if request.url.path in ["/", "/docs", "/openapi.json"]:
         response = await call_next(request)
         return response
 
