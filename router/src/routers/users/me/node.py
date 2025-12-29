@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 import redis
-import logging
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 from utils.crypto import generate_node_api_key
@@ -118,11 +117,10 @@ async def authenticate_node(request: AuthenticateNodeRequest):
         client.delete(f'setup_token:{request.setupToken}')
         client.delete(f'setup_token_name:{request.setupToken}')
 
-        return {
-            "status": "success",
-            "message": "Node authenticated successfully",
-            "nodeId": node_id
-        }
+        return JSONResponse(
+            content="Node authenticated successfully",
+            status_code=200
+        )
 
     except redis.exceptions.ConnectionError as e:
         raise HTTPException(
@@ -185,12 +183,16 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
         # Assign the model to the node
         client.set(f'node:{request.nodeId}:models', request.modelId)
 
-        return {
-            "status": "success",
+        response = {
             "message": "Model assigned to node successfully",
             "nodeId": request.nodeId,
             "modelId": request.modelId
         }
+
+        return JSONResponse(
+            content=response,
+            status_code=200
+        )
 
     except redis.exceptions.ConnectionError as e:
         raise HTTPException(
