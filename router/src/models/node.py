@@ -16,3 +16,5 @@ class AssignModelToNodeRequest(BaseModel):
     userId: str
     nodeId: str
     modelId: str
+    modelName: str
+    huggingFaceModelId: str

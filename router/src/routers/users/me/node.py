@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 import redis
+import logging
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 from utils.crypto import generate_node_api_key
+from utils.redis import get_redis_client
 
 router = APIRouter(
     prefix="/user/me",
@@ -14,38 +17,36 @@ async def get_nodes(userId: str):
     """Get all nodes for a user with their information"""
 
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         # Get all node IDs for this user
         node_ids = client.smembers(f'user:{userId}:nodes')
-
+        # Check to see if the user even has any nodes
         if not node_ids:
-            return []
+            return JSONResponse(
+                content="",
+                status_code=200
+            )
 
         # Fetch data for each node
         nodes = []
         for node_id in node_ids:
             node_data = client.hgetall(f'node:{node_id}')
-
             if node_data:
-                # Include the node_id in the response
-                node_data['nodeId'] = node_id
+                single_node = {
+                    "activeModelName": node_data.get('activeModelName'),
+                    "activeModelId": node_data.get('activeModelId'),
+                    "nodeId": node_data.get('nodeId'),
+                    "modelName": node_data.get('nodeName'),
+                    "modelStatus": node_data.get('status')
+                }
+                nodes.append(single_node)
 
-                # Include assigned models
-                assigned_models = client.smembers(f'node:{node_id}:models')
-                node_data['assignedModels'] = list(assigned_models) if assigned_models else []
-
-                # Ensure model status fields exist (backward compatibility)
-                if 'modelStatus' not in node_data:
-                    node_data['modelStatus'] = 'idle'
-                if 'activeModel' not in node_data:
-                    node_data['activeModel'] = ''
-                if 'activeModelName' not in node_data:
-                    node_data['activeModelName'] = ''
-
-                nodes.append(node_data)
-
-        return nodes
+        # Return the complete list after the loop finishes
+        return JSONResponse(
+            content=nodes,
+            status_code=200
+        )
 
     except redis.exceptions.ConnectionError as e:
         raise HTTPException(
