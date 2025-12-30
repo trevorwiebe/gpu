@@ -43,33 +43,65 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ## Technical Architecture
 
 ### Core Components
-- **Central Router**: FastAPI-based routing and load balancing
+- **Central Router**: FastAPI-based routing and load balancing with Redis caching
 - **Host Software**: Docker-containerized inference engines (vLLM/TGI)
-- **Web Dashboard**: React-based client and host interfaces
-- **Database**: PostgreSQL for metrics, Redis for caching/sessions
+- **Web Dashboard**: React/TypeScript frontend with Vite build system
+- **Database**: Redis for caching, sessions, and real-time data
 
 ### Infrastructure Stack
-- **Backend**: Python/FastAPI, PostgreSQL, Redis
-- **Frontend**: React
+- **Backend**: Python/FastAPI, Redis, cryptographic security utilities
+- **Frontend**: React/TypeScript, Vite, RTK Query for state management
 - **Host Platform**: Ubuntu with Docker
 - **Inference Engine**: vLLM (primary), Text Generation Inference
-- **Payments**: Stripe integration
-- **Monitoring**: Custom health monitoring system
+- **Containerization**: Docker Compose orchestration
+- **Build System**: Modern TypeScript/ESLint configuration
 
 ## Getting Started
 
+### Prerequisites
+- Docker and Docker Compose
+- Redis server
+- Node.js (for frontend development)
+
+### Quick Start
+```bash
+# Start all services
+./scripts/startup.sh
+
+# Add a new node
+./scripts/add-node.sh
+
+# View logs
+./scripts/logs.sh
+
+# Shutdown services
+./scripts/shutdown.sh
+```
+
 ### For Clients
 1. Create account and generate API key
-2. Add credits via Stripe integration
-3. Use OpenAI-compatible endpoint in your application
-4. Monitor usage and costs in dashboard
+2. Use OpenAI-compatible completion endpoint
+3. Monitor usage via React dashboard
+4. Track completions and model performance
 
 ### For GPU Owners
-1. Register host account
-2. Run setup script on Ubuntu system
-3. Select models based on hardware capabilities
-4. Enable/disable processing via CLI
-5. Track earnings and payouts in dashboard
+1. Register host account via API
+2. Run Docker containers using provided scripts
+3. Configure models through web interface
+4. Monitor node health and earnings
+
+## API Endpoints
+
+### Router Service
+- `POST /completion` - OpenAI-compatible text completion
+- `GET /health` - System health check
+- `GET /users/me/node` - User node management
+- `GET /users/me/library` - User model library
+
+### Node Service
+- `POST /generate` - Text generation endpoint
+- `GET /info` - Node information and capabilities
+- `POST /setup` - Model setup and configuration
 
 ## Model Support
 
@@ -81,46 +113,77 @@ Starting with popular open-source LLMs:
 
 **Note**: All models are carefully vetted for licensing compliance. Platform includes clear license information and attribution requirements.
 
+## Development
+
+### Backend Development
+```bash
+# Rebuild router
+./scripts/rebuild-router.sh
+
+# Rebuild nodes
+./scripts/rebuild-nodes.sh
+
+# Clear Redis cache
+./scripts/clear_redis.sh
+
+# Dump Redis data
+./scripts/dump_redis.sh
+```
+
+### Frontend Development
+```bash
+cd front-end
+npm install
+npm run dev
+```
+
+The frontend features:
+- TypeScript with strict type checking
+- RTK Query for API state management
+- Component-based architecture
+- Real-time model and node management
+- Responsive design with modern CSS
+
+For detailed technical specifications, architecture decisions, and development roadmap, see [GUIDE.md](./GUIDE.md).
+
 ## Security & Privacy
 
 - Docker containerization for host isolation
-- Standard API key management with revocation
-- Client data processed on distributed hardware (transparency provided)
-- Host verification and validation systems
-- DDoS protection and rate limiting
+- Cryptographic utilities for secure communications
+- Redis-based session management
+- API key authentication with revocation
+- Health monitoring and validation systems
+- Rate limiting and DDoS protection
 
 ## Pricing Model
 
 - **Per-token pricing** following industry standards
 - **Dynamic pricing** based on supply and demand per model
-- **Batched billing** with configurable thresholds
-- **Threshold-based payouts** for hosts
-
-## Development
-
-For detailed technical specifications, architecture decisions, and development roadmap, see [GUIDE.md](./GUIDE.md).
+- **Real-time completion tracking** with detailed metrics
+- **Transparent cost monitoring** through dashboard
 
 ## Legal & Compliance
 
 - Comprehensive Terms of Service for both clients and hosts
 - Model license compliance and attribution requirements
 - Client responsibility for license compliance at scale
-- Data privacy and GDPR considerations
+- Data privacy and security considerations
 
 ## Roadmap
 
-### MVP Focus
-- Single model support (Llama 3.1 8B)
-- Invite-only host onboarding
-- US-only geographic scope
-- CLI-based host management
-- Basic dashboards and billing
+### Current Implementation
+- FastAPI-based router with Redis backend
+- React/TypeScript frontend with modern tooling
+- Docker-based node management
+- Real-time health monitoring
+- Model library management
+- OpenAI-compatible API endpoints
 
 ### Future Enhancements
-- Multi-model support with advanced routing
-- Web-based host management
+- Advanced load balancing algorithms
 - Geographic optimization
-- Advanced analytics and fraud detection
+- Enhanced analytics and monitoring
+- Automated scaling and deployment
 - Image generation and other model types
 
 ---
