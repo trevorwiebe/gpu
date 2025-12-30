@@ -8,7 +8,7 @@ import { useUser } from "@clerk/clerk-react";
 import AssignModel from './AssignModel';
 import AssignedNodeChips from './AssignedNodeChips';
 
-import { LibraryModel } from '../../types'
+import { LibraryModel, NodeModel } from '../../types'
 
 export default function LibraryModelList(){
 
@@ -55,6 +55,9 @@ export default function LibraryModelList(){
         renderedContent = <div>No models in library</div>
     } else {
         renderedContent = library.map((model: LibraryModel) => {
+
+            const filteredNodes = nodes.filter((node: NodeModel)  => node.activeModelId === model.modelId);
+
             return (
                 <div key={model.modelId} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
                     <div className="flex justify-between items-start">
@@ -64,7 +67,7 @@ export default function LibraryModelList(){
                             <p className='text-gray-500 text-xs'>Hugging Face Model Id: {model.huggingFaceModelId}</p>
                             <AssignedNodeChips
                                 modelId={model.modelId}
-                                nodes={nodes || []}
+                                selectedNodes={filteredNodes}
                             />
                         </div>
                         <AssignModel

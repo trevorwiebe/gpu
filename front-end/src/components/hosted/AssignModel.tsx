@@ -51,6 +51,12 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
         }
     }
 
+    // We call this function when the user wants to cancel their node selection
+    const handleCancel = () => {
+        setSelectedNodeId(null);
+        setIsOpen(false);
+    }
+
     var nodeMenu;
 
     if (nodes.length === 0) {
@@ -90,11 +96,11 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
     }
 
     return (
-        <div ref={dropdownRef} className="relative">
+        <div ref={dropdownRef} className="relative flex flex-col items-end">
             <Button
-                title="Select Node"
-                onClick={handleToggleDropdownOpen}
-                className="border-green-900 text-green-900 hover:bg-green-100"
+                title={selectedNodeId ? "Cancel" : "Select Node"}
+                onClick={selectedNodeId ? handleCancel : handleToggleDropdownOpen}
+                className={selectedNodeId ? "border-red-600 text-red-600 hover:bg-red-100" : "border-green-900 text-green-900 hover:bg-green-100"}
             />
 
             {isOpen && nodeMenu}
@@ -103,7 +109,7 @@ export default function AssignModel({modelId, nodes, onNodeSelected}: AssignMode
                 <Button
                     title={`Confirm ${nodes.find(node => node.nodeId === selectedNodeId)?.nodeName || ''}`}
                     onClick={handleNodeSelect}
-                    className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:border-green-800 ml-2"
+                    className="border-green-900 text-white bg-green-900 hover:bg-green-800 hover:border-green-800"
                 />
             )}
         </div>

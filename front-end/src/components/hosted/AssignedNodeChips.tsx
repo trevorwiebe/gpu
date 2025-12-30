@@ -2,18 +2,15 @@ import { NodeModel } from "@/types";
 
 interface AssignedNodeChipsProps {
     modelId: string;
-    nodes: NodeModel[];
+    selectedNodes: NodeModel[];
 }
 
-export default function AssignedNodeChips({ modelId, nodes }: AssignedNodeChipsProps) {
-    // Find all nodes that have this model assigned
-    const assignedNodes = nodes.filter(node => node.activeModelId == modelId);
-
-    if (assignedNodes.length === 0) return null;
+export default function AssignedNodeChips({ modelId, selectedNodes }: AssignedNodeChipsProps) {
 
     return (
-        <div className="flex flex-wrap gap-2 mt-2">
-            {assignedNodes.map(node => (
+        <div className="flex flex-wrap gap-2 mt-2 h-6 items-center">
+            <p className="text-xs">Active Nodes: </p>
+            {selectedNodes.map(node => (
                 <div
                     key={node.nodeId}
                     className="px-3 py-1 bg-green-900 text-white text-xs rounded-full"
