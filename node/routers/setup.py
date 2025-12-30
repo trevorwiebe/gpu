@@ -1,5 +1,6 @@
 import uuid
 import random
+import asyncio
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from utils import get_redis_client, is_node_authenticated, get_node_user_id, update_node_status_in_redis
@@ -85,7 +86,7 @@ async def post_assign_model(request: AssignModel):
             status_code=401,
             detail="This node is not authenticated.  Please authenticate by calling http://localhost:PORT/setup."
         )
-    
+
     client = get_redis_client()
     node = client.hgetall(f'node:{request.nodeId}')
 
@@ -98,14 +99,27 @@ async def post_assign_model(request: AssignModel):
         else:
             unload_model(request.modelId)
 
-    load_model(request.modelId, request.modelName)
+    # Set initial status in Redis
+    update_node_status_in_redis(app.node_id, "queued", request.modelId, request.modelName)
+
+    # Start the model loading in the background
+    asyncio.create_task(load_model_async(request.modelId, request.modelName))
+
+    # Return immediately with 202 Accepted
     return JSONResponse(
-        content={"detail": f"{request.modelId} loaded successfully"},
-        status_code=200
+        content={
+            "detail": f"Model {request.modelId} loading started.",
+            "status": "queued"
+        },
+        status_code=202
     )
 
+async def load_model_async(model_id: str, model_name: str):
+    """Async wrapper for load_model to run in background"""
+    await asyncio.to_thread(load_model, model_id, model_name)
+
 def load_model(
-        model_id: str, 
+        model_id: str,
         model_name: str
     ) -> bool:
 
