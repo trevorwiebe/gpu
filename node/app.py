@@ -13,7 +13,14 @@ import routers.info as info
 import routers.generate as generate
 from utils import get_node_api_key
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # Output to stdout/stderr for Docker logs
+    ]
+)
 
 # Initialize FastAPI app
 app = FastAPI(title="Node", version="1.0.0")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 import redis
 import httpx #type: ignore
+import logging
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 from utils.crypto import generate_node_api_key
@@ -77,6 +78,7 @@ async def authenticate_node(request: AuthenticateNodeRequest):
 
         # Retrieve the node name
         node_name = client.get(f'setup_token_name:{request.setupToken}')
+        node_url = client.get(f'setup_node_url:{request.setupToken}')
 
         # Ensure node name is unique for this user
         existing_node_ids = client.smembers(f'user:{request.userId}:nodes')
@@ -103,6 +105,7 @@ async def authenticate_node(request: AuthenticateNodeRequest):
             "userId": request.userId,
             "status": "active",
             "nodeName": node_name,
+            "nodeUrl": node_url,
             "modelStatus": "idle",
             "activeModelId": "",
             "activeModelName": "",
@@ -118,6 +121,7 @@ async def authenticate_node(request: AuthenticateNodeRequest):
         # Delete the setup token and node name as they've been used
         client.delete(f'setup_token:{request.setupToken}')
         client.delete(f'setup_token_name:{request.setupToken}')
+        client.delete(f'setup_node_url:{request.setupToken}')
 
         return JSONResponse(
             content="Node authenticated successfully",
@@ -176,8 +180,10 @@ async def assign_model_to_node(request: AssignModelToNodeRequest):
             )
 
         # Call the node /assign-model endpoint
-        node_url = "http://gpu-node-1:8005"
-
+        node_url = node_data.get('nodeUrl')
+        logging.info(node_url)
+        logging.info("Here")
+        
         # Use provided values or look them up from Redis
         model_name = request.modelName or model_data.get('modelName', '')
         hugging_face_id = request.huggingFaceModelId or model_data.get('huggingFaceModelId', '')

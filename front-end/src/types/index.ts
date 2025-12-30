@@ -38,6 +38,7 @@ export interface NodeModel {
     userId: string,
     status: string,
     nodeName: string,
+    nodeUrl: string,
     activeModelId?: string,
     modelStatus?: string,
     activeModelName?: string

@@ -1,7 +1,8 @@
 import uuid
 import random
 import asyncio
-from fastapi import APIRouter, HTTPException
+import socket
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from utils import get_redis_client, is_node_authenticated, get_node_user_id, update_node_status_in_redis
 import logging
@@ -40,7 +41,7 @@ def generate_node_name():
     return f"{adjective}-{noun}"
 
 @router.get("/setup")
-async def get_setup_info():
+async def get_setup_info(request: Request):
     """
     Get setup information for node authentication
     Returns authentication status and setup URL if not authenticated
@@ -57,10 +58,15 @@ async def get_setup_info():
     setup_token = str(uuid.uuid4())
     node_name = generate_node_name()
 
+    hostname = socket.gethostname()
+    port = int(os.getenv("EXTERNAL_PORT", "8005"))
+    node_url = f"http://{hostname}:{port}"
+
     try:
         client = get_redis_client()
         client.setex(f'setup_token:{setup_token}', 3600, app.node_id)
         client.setex(f'setup_token_name:{setup_token}', 3600, node_name)
+        client.setex(f'setup_node_url:{setup_token}', 3600, node_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate setup token: {str(e)}")
 

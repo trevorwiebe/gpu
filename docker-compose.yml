@@ -1,6 +1,6 @@
 
 services:
-  # Central router
+  # router
   router:
     build:
       context: ./router
@@ -15,7 +15,7 @@ services:
     depends_on:
       - node
 
-  # SmolLM2 Node Service
+  # Node
   node:
     build:
       context: ./node
