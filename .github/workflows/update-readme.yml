@@ -2,13 +2,18 @@ name: Update README
 on:
   push:
     branches: [main]
+
+permissions:
+  contents: write 
+
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # Need at least 2 commits to diff
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -68,7 +73,7 @@ jobs:
           if git diff --quiet README.md; then
             echo "message=docs: no README updates needed" >> $GITHUB_OUTPUT
           else
-            python3 << 'EOF'
+            MSG=$(python3 << 'EOF'
           import anthropic
           import subprocess
           import os
@@ -85,8 +90,10 @@ jobs:
               }]
           )
           
-          print(f"message={message.content[0].text.strip()}")
+          print(message.content[0].text.strip())
           EOF
+          )
+            echo "message=$MSG" >> $GITHUB_OUTPUT
           fi
       
       - name: Commit changes
