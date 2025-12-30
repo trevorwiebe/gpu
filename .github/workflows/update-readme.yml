@@ -1,0 +1,25 @@
+- name: Update README
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  run: |
+    claude-code --prompt "Review the recent commit changes in light of the whole project and update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone.  Do not update the readme if the changes where insignificant."
+
+- name: Generate commit message
+  id: commit_msg
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  run: |
+    if git diff --quiet README.md; then
+      echo "message=docs: no README updates needed" >> $GITHUB_OUTPUT
+    else
+      MSG=$(claude-code --prompt "Based on the git diff of README.md, generate a single-line commit message (max 72 chars) starting with 'docs: ' that describes what was updated. Examples: 'docs: add new API endpoint section' or 'docs: update installation steps'. Output ONLY the commit message, nothing else.")
+      echo "message=$MSG" >> $GITHUB_OUTPUT
+    fi
+
+- name: Commit changes
+  run: |
+    git config user.name github-actions
+    git config user.email github-actions@github.com
+    git add README.md
+    git commit -m "${{ steps.commit_msg.outputs.message }}" || echo "No changes"
+    git push
