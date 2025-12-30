@@ -55,6 +55,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - **Inference Engine**: vLLM (primary), Text Generation Inference
 - **Containerization**: Docker Compose orchestration
 - **Build System**: Modern TypeScript/ESLint configuration
+- **Logging**: Structured logging with Docker-compatible output format
 
 ## Getting Started
 
@@ -101,7 +102,22 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ### Node Service
 - `POST /generate` - Text generation endpoint
 - `GET /info` - Node information and capabilities
-- `POST /setup` - Model setup and configuration
+- `GET /setup` - Model setup with automatic URL detection
+
+## Node Management
+
+### Dynamic Node Discovery
+The platform now features automatic node URL detection and routing:
+- Each node automatically registers its hostname and port
+- Dynamic network configuration with Docker aliases
+- Automatic port allocation for new nodes
+- Enhanced node management with URL tracking
+
+### Node Setup Process
+1. Node generates unique setup token with auto-detected URL
+2. Authentication includes hostname and port registration
+3. Router routes requests to correct node URLs automatically
+4. Support for multiple nodes with unique naming
 
 ## Model Support
 
@@ -138,22 +154,28 @@ npm run dev
 ```
 
 The frontend features:
-- TypeScript with strict type checking
+- TypeScript with strict type checking and enhanced node URL tracking
 - RTK Query for API state management
 - Component-based architecture
-- Real-time model and node management
+- Real-time model and node management with URL display
 - Responsive design with modern CSS
 
-For detailed technical specifications, architecture decisions, and development roadmap, see [GUIDE.md](./GUIDE.md).
+### Logging and Monitoring
+- Structured logging format with timestamps and component identification
+- Docker-compatible log output for container orchestration
+- Enhanced debugging capabilities for node-to-router communication
+
+For detailed technical specifications, architecture decisions, and development roadmap, see [ROADMAP.md](./ROADMAP.md).
 
 ## Security & Privacy
 
 - Docker containerization for host isolation
 - Cryptographic utilities for secure communications
-- Redis-based session management
+- Redis-based session management with secure token cleanup
 - API key authentication with revocation
 - Health monitoring and validation systems
 - Rate limiting and DDoS protection
+- Automatic cleanup of used setup tokens
 
 ## Pricing Model
 
@@ -172,10 +194,10 @@ For detailed technical specifications, architecture decisions, and development r
 ## Roadmap
 
 ### Current Implementation
-- FastAPI-based router with Redis backend
-- React/TypeScript frontend with modern tooling
-- Docker-based node management
-- Real-time health monitoring
+- FastAPI-based router with Redis backend and enhanced logging
+- React/TypeScript frontend with node URL tracking
+- Docker-based node management with automatic service discovery
+- Real-time health monitoring and dynamic routing
 - Model library management
 - OpenAI-compatible API endpoints
 
