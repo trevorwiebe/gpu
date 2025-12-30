@@ -33,33 +33,50 @@ jobs:
           import os
 
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-          
+
           # Get recent changes
           diff = subprocess.run(['git', 'diff', 'HEAD~1'], capture_output=True, text=True).stdout
-          
+
+          # Get project file tree (excluding common ignore patterns)
+          tree = subprocess.run(
+              ['find', '.', '-type', 'f', 
+              '!', '-path', '*/.*',
+              '!', '-path', '*/node_modules/*',
+              '!', '-path', '*/.gpu/*',
+              '!', '-path', '*/__pycache__/*',
+              '!', '-path', '*/build/*',
+              '!', '-path', '*/dist/*'],
+              capture_output=True, text=True
+          ).stdout
+
           # Get current README
           with open('README.md', 'r') as f:
               readme = f.read()
-          
+
           # Ask Claude to update it
           message = client.messages.create(
               model="claude-sonnet-4-20250514",
               max_tokens=4096,
               messages=[{
                   "role": "user",
-                  "content": f"""Review these recent commit changes and update the README if needed:
+                  "content": f"""Your job is to make sure the current README aligns with the actual state of the project.
+          The project is in active development with new commits being made regularly.
 
+          First, here's the project file structure:
+          {tree}
+
+          Recent changes committed:
           {diff}
 
           Current README:
           {readme}
 
-          Update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone. Do not update if changes are insignificant.
+          Review the project structure and recent changes. Update README.md to reflect any new features, API changes, dependencies, or setup instructions. Maintain existing structure and tone. Do not update if changes are insignificant.
 
           Output ONLY the updated README content, nothing else."""
               }]
           )
-          
+
           # Write updated README
           with open('README.md', 'w') as f:
               f.write(message.content[0].text)
