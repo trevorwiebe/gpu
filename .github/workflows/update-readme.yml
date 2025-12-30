@@ -7,17 +7,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          fetch-depth: 2  # Need at least 2 commits to diff
       
-      - name: Update README
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Anthropic SDK
+        run: pip install anthropic
+      
+      - name: Update README with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          npx @anthropic-ai/claude-code --prompt "Review the recent commit changes in light of the whole project and update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone. Do not update the README if the changes are insignificant."
+          python3 << 'EOF'
+          import anthropic
+          import subprocess
+          import os
+
+          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+          
+          # Get recent changes
+          diff = subprocess.run(['git', 'diff', 'HEAD~1'], capture_output=True, text=True).stdout
+          
+          # Get current README
+          with open('README.md', 'r') as f:
+              readme = f.read()
+          
+          # Ask Claude to update it
+          message = client.messages.create(
+              model="claude-sonnet-4-20250514",
+              max_tokens=4096,
+              messages=[{
+                  "role": "user",
+                  "content": f"""Review these recent commit changes and update the README if needed:
+
+          {diff}
+
+          Current README:
+          {readme}
+
+          Update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone. Do not update if changes are insignificant.
+
+          Output ONLY the updated README content, nothing else."""
+              }]
+          )
+          
+          # Write updated README
+          with open('README.md', 'w') as f:
+              f.write(message.content[0].text)
+          EOF
       
       - name: Generate commit message
         id: commit_msg
@@ -27,8 +68,25 @@ jobs:
           if git diff --quiet README.md; then
             echo "message=docs: no README updates needed" >> $GITHUB_OUTPUT
           else
-            MSG=$(npx @anthropic-ai/claude-code --prompt "Based on the git diff of README.md, generate a single-line commit message (max 72 chars) starting with 'docs: ' that describes what was updated. Output ONLY the commit message, nothing else.")
-            echo "message=$MSG" >> $GITHUB_OUTPUT
+            python3 << 'EOF'
+          import anthropic
+          import subprocess
+          import os
+          
+          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+          diff = subprocess.run(['git', 'diff', 'README.md'], capture_output=True, text=True).stdout
+          
+          message = client.messages.create(
+              model="claude-sonnet-4-20250514",
+              max_tokens=100,
+              messages=[{
+                  "role": "user",
+                  "content": f"Based on this README diff, generate a single-line commit message (max 72 chars) starting with 'docs: '. Output ONLY the message:\n\n{diff}"
+              }]
+          )
+          
+          print(f"message={message.content[0].text.strip()}")
+          EOF
           fi
       
       - name: Commit changes
