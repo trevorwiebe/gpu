@@ -20,25 +20,25 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ## Key Features
 
 ### For Clients
-- 🔑 Simple API access compatible with OpenAI SDK
-- 💰 Dynamic pricing cheaper than closed-source alternatives  
-- 🔄 Support for popular open-source models
-- 📊 Real-time usage dashboard and billing
-- ⚡ No hardware requirements
+- Simple API access compatible with OpenAI SDK
+- Dynamic pricing cheaper than closed-source alternatives  
+- Support for popular open-source models
+- Real-time usage dashboard and billing
+- No hardware requirements
 
 ### For GPU Owners
-- 💵 Monetize idle GPU time
-- 🎛️ Full control - choose models and availability
-- 📈 Transparent earnings and demand analytics
-- 🐳 Docker-based isolation and security
-- 🔧 Simple setup via automated script
+- Monetize idle GPU time
+- Full control - choose models and availability
+- Transparent earnings and demand analytics
+- Docker-based isolation and security
+- Simple setup via automated script
 
 ### Platform Features
-- 🔄 Round-robin load balancing
-- 💓 Health monitoring and failover
-- 🔐 Model verification and hardware validation
-- 💳 Automated billing and payouts
-- 📊 Supply/demand pricing engine
+- Round-robin load balancing
+- Health monitoring and failover
+- Model verification and hardware validation
+- Automated billing and payouts
+- Supply/demand pricing engine
 
 ## Technical Architecture
 
