@@ -29,6 +29,19 @@ The goal is extreme simplicity - clients think "I need an API key for AI process
 
 ---
 
+## Development & Automation
+
+### CI/CD Pipeline
+The project includes automated documentation updates through GitHub Actions. When code changes are pushed to the main branch, an intelligent system powered by Claude AI automatically reviews the changes and updates this README as needed to reflect new features, API changes, or setup instructions.
+
+**Workflow Features:**
+- Automatic detection of significant changes requiring documentation updates
+- AI-powered commit message generation for documentation changes
+- Seamless integration with existing development workflow
+- Maintains documentation consistency and accuracy
+
+---
+
 ## Core Requirements
 
 ### Client Requirements
