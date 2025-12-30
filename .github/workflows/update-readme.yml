@@ -60,7 +60,8 @@ jobs:
               messages=[{
                   "role": "user",
                   "content": f"""Your job is to make sure the current README aligns with the actual state of the project.
-          The project is in active development with new commits being made regularly.
+          The project is in active development with new commits being made regularly.  But remember, you are a professional,
+          and you don't use any emojis.
 
           First, here's the project file structure:
           {tree}
