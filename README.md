@@ -102,7 +102,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ### Node Service
 - `POST /generate` - Text generation endpoint
 - `GET /info` - Node information and capabilities
-- `GET /setup` - Model setup with automatic URL detection
+- `POST /setup` - Model setup with automatic URL detection
 
 ## Node Management
 
