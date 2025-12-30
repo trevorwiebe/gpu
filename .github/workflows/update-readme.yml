@@ -8,14 +8,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
       
       - name: Update README
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          claude-code --prompt "Review the recent commit changes in light of the whole project and update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone. Do not update the README if the changes are insignificant."
+          npx @anthropic-ai/claude-code --prompt "Review the recent commit changes in light of the whole project and update README.md to reflect any new features, API changes, or setup instructions. Maintain existing structure and tone. Do not update the README if the changes are insignificant."
       
       - name: Generate commit message
         id: commit_msg
@@ -25,7 +27,7 @@ jobs:
           if git diff --quiet README.md; then
             echo "message=docs: no README updates needed" >> $GITHUB_OUTPUT
           else
-            MSG=$(claude-code --prompt "Based on the git diff of README.md, generate a single-line commit message (max 72 chars) starting with 'docs: ' that describes what was updated. Examples: 'docs: add new API endpoint section' or 'docs: update installation steps'. Output ONLY the commit message, nothing else.")
+            MSG=$(npx @anthropic-ai/claude-code --prompt "Based on the git diff of README.md, generate a single-line commit message (max 72 chars) starting with 'docs: ' that describes what was updated. Output ONLY the commit message, nothing else.")
             echo "message=$MSG" >> $GITHUB_OUTPUT
           fi
       
