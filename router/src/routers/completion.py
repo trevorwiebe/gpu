@@ -3,8 +3,11 @@ from fastapi import APIRouter, HTTPException
 import os
 import httpx # type: ignore
 import redis
+import time
+import logging
 
 from models.completion import *
+from utils.redis import get_redis_client
 
 NODE_URL = os.getenv("NODE_URL", "http://node:8005")
 
@@ -13,7 +16,7 @@ router = APIRouter(
     tags=["completions"]
 )
 
-async def find_node_with_model(model_name_or_id: str) -> dict:
+async def find_node_with_model(model_name: str) -> dict:
     """
     Find a node that has the requested model loaded and ready.
 
@@ -24,7 +27,7 @@ async def find_node_with_model(model_name_or_id: str) -> dict:
         client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
 
         # Strategy 1: Try to find by model ID (exact match)
-        model_data = client.hgetall(f'model:{model_name_or_id}')
+        model_data = client.hgetall(f'model:{model_name}')
 
         if model_data:
             model_id = model_data['modelId']
@@ -32,50 +35,74 @@ async def find_node_with_model(model_name_or_id: str) -> dict:
         else:
             # Strategy 2: Search by model name across all models
             model_keys = client.keys('model:*')
-            model_id = None
-            model_name = None
+            found_model_id = None
+            found_model_name = None
 
             for model_key in model_keys:
                 data = client.hgetall(model_key)
-                if data.get('modelName') == model_name_or_id:
-                    model_id = data['modelId']
-                    model_name = data['modelName']
+                if data.get('modelName') == model_name:
+                    found_model_id = data['modelId']
+                    found_model_name = data['modelName']
                     break
 
-            if not model_id:
+            if not found_model_id:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Model '{model_name_or_id}' not found in library"
+                    detail=f"Model '{model_name}' not found in library"
                 )
 
-        # Find a node with this model loaded and ready
+            model_id = found_model_id
+            model_name = found_model_name
+
+        # Find all nodes with this model loaded and ready (LRU selection)
         node_keys = client.keys('node:*')
         node_keys = [k for k in node_keys if not k.endswith(':models')]
+
+        candidate_nodes = []
 
         for node_key in node_keys:
             node_id = node_key.replace('node:', '')
             node_data = client.hgetall(node_key)
 
-            if (node_data.get('activeModel') == model_id and
+            if (node_data.get('activeModelId') == model_id and
                 node_data.get('modelStatus') == 'ready'):
 
                 node_api_key = node_data.get('apiKey')
                 if not node_api_key:
                     continue  # Skip nodes without API keys
 
-                return {
+                # Parse lastUsedAt timestamp (default to 0 if missing/invalid)
+                last_used_str = node_data.get('lastUsedAt', '0')
+                try:
+                    last_used = int(last_used_str or '0')
+                except (ValueError, TypeError):
+                    last_used = 0  # Treat invalid as never used
+
+                candidate_nodes.append({
                     "nodeId": node_id,
-                    "nodeUrl": "http://node:8005",  # All nodes on same Docker network
+                    "nodeUrl": node_data.get('nodeUrl'),
                     "modelId": model_id,
                     "modelName": model_name,
-                    "apiKey": node_api_key
-                }
+                    "apiKey": node_api_key,
+                    "lastUsedAt": last_used
+                })
 
-        # Model exists but not loaded on any ready node
-        raise HTTPException(
-            status_code=404,
-            detail=f"Model '{model_name_or_id}' is not loaded on any ready node"
+        if not candidate_nodes:
+            # Model exists but not loaded on any ready node
+            raise HTTPException(
+                status_code=404,
+                detail=f"Model '{model_name}' is not loaded on any ready node"
+            )
+
+        # Select least recently used node (tiebreak by nodeId for determinism)
+        selected_node = min(
+            candidate_nodes,
+            key=lambda n: (n['lastUsedAt'], n['nodeId'])
         )
+
+        # Remove lastUsedAt before returning (not needed by caller)
+        selected_node.pop('lastUsedAt')
+        return selected_node
 
     except redis.exceptions.ConnectionError as e:
         raise HTTPException(
@@ -127,6 +154,17 @@ async def completions(request: CompletionRequest):
                 )
 
             node_response = response.json()
+
+            # Update node's lastUsedAt timestamp after successful completion
+            try:
+                redis_client = get_redis_client()
+                redis_client.hset(
+                    f'node:{node_info["nodeId"]}',
+                    'lastUsedAt',
+                    str(int(time.time()))
+                )
+            except Exception as e:
+                logging.warning(f"Failed to update lastUsedAt for node {node_info['nodeId']}: {str(e)}")
 
             # Convert to OpenAI format
             return {

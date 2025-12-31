@@ -15,7 +15,7 @@ async def generate_text(request: GenerateRequest):
         raise HTTPException(status_code=403, detail="Node not authenticated")
 
     # Check if a model is loaded
-    if not app.loaded_models:
+    if not app.loaded_model:
         raise HTTPException(status_code=503, detail="No model loaded")
 
     active_model_data = app.loaded_model

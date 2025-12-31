@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import redis
 import httpx #type: ignore
 import logging
+import time
 
 from models.node import AuthenticateNodeRequest, AssignModelToNodeRequest
 from utils.crypto import generate_node_api_key
@@ -109,7 +110,8 @@ async def authenticate_node(request: AuthenticateNodeRequest):
             "modelStatus": "idle",
             "activeModelId": "",
             "activeModelName": "",
-            "apiKey": node_api_key
+            "apiKey": node_api_key,
+            "lastUsedAt": str(int(time.time()))
         }
 
         # Store node data
