@@ -45,12 +45,12 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ### Core Components
 - **Central Router**: FastAPI-based routing and load balancing with Redis caching
 - **Host Software**: Docker-containerized inference engines (vLLM/TGI)
-- **Web Dashboard**: React/TypeScript frontend with Vite build system
+- **Web Dashboard**: React/TypeScript frontend with Vite build system and responsive design
 - **Database**: Redis for caching, sessions, and real-time data
 
 ### Infrastructure Stack
 - **Backend**: Python/FastAPI, Redis, cryptographic security utilities
-- **Frontend**: React/TypeScript, Vite, RTK Query for state management
+- **Frontend**: React/TypeScript, Vite, RTK Query for state management with enhanced responsive layouts
 - **Host Platform**: Ubuntu with Docker
 - **Inference Engine**: vLLM (primary), Text Generation Inference
 - **Containerization**: Docker Compose orchestration
@@ -156,9 +156,16 @@ npm run dev
 The frontend features:
 - TypeScript with strict type checking and enhanced node URL tracking
 - RTK Query for API state management
-- Component-based architecture
+- Component-based architecture with optimized responsive layouts
 - Real-time model and node management with URL display
-- Responsive design with modern CSS
+- Enhanced responsive design supporting larger screen formats (up to max-width 6xl)
+
+### User Interface Enhancements
+The platform now offers improved responsive design with:
+- Expanded maximum container widths for better utilization of large displays
+- Optimized breakpoints: small (2xl), medium (4xl), and large (6xl) screen support
+- Enhanced layout distribution for model browsing and hosting interfaces
+- Consistent responsive patterns across all major components
 
 ### Logging and Monitoring
 - Structured logging format with timestamps and component identification
@@ -195,10 +202,10 @@ For detailed technical specifications, architecture decisions, and development r
 
 ### Current Implementation
 - FastAPI-based router with Redis backend and enhanced logging
-- React/TypeScript frontend with node URL tracking
+- React/TypeScript frontend with enhanced responsive design and node URL tracking
 - Docker-based node management with automatic service discovery
 - Real-time health monitoring and dynamic routing
-- Model library management
+- Model library management with improved user experience
 - OpenAI-compatible API endpoints
 
 ### Future Enhancements
