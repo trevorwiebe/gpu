@@ -3,7 +3,7 @@ import LibraryModelList from "./hosted/LibraryModelList"
 
 export default function Hosted() {
     return (
-        <div className="flex flex-row w-full max-w-md md:max-w-xl lg:max-w-4xl mx-auto">
+        <div className="flex flex-row w-full max-w-2xl md:max-w-4xl lg:max-w-6xl mx-auto">
             <div className="w-2/3">
                 <LibraryModelList />
             </div>
