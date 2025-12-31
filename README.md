@@ -93,9 +93,6 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ```bash
 # Pull pre-built image
 docker pull username/node:latest
-
-# Or pull model-specific image
-docker pull username/node:llama-3.1-8b
 ```
 
 #### Building from Source
@@ -139,7 +136,6 @@ The platform now features advanced load balancing with intelligent node selectio
 The platform provides pre-built Docker images through automated CI/CD:
 
 - **Base images**: Available for multiple architectures (AMD64/ARM64)
-- **Model-specific images**: Optimized for popular models
 - **Version control**: Tagged releases for stable deployments
 - **Automated builds**: Updated with each release
 
