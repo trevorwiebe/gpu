@@ -56,7 +56,8 @@ export default function LibraryModelList(){
     } else {
         renderedContent = library.map((model: LibraryModel) => {
 
-            const filteredNodes = nodes.filter((node: NodeModel)  => node.activeModelId === model.modelId);
+            const nodesArray = Array.isArray(nodes) ? nodes : [];
+            const filteredNodes = nodesArray.filter((node: NodeModel) => node.activeModelId === model.modelId);
 
             return (
                 <div key={model.modelId} className="bg-gray-200 my-2 p-4 rounded-[3vw]">
@@ -72,7 +73,7 @@ export default function LibraryModelList(){
                         </div>
                         <AssignModel
                             modelId={model.modelId}
-                            nodes={nodes || []}
+                            nodes={nodesArray}
                             onNodeSelected={createNodeSelectHandler(model.modelId)}
                         />
                     </div>
