@@ -40,7 +40,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - Model verification and hardware validation
 - Automated billing and payouts
 - Supply/demand pricing engine
-- Cross-platform Docker support (AMD64/ARM64)
+- Optimized Docker support (AMD64 architecture)
 
 ## Technical Architecture
 
@@ -53,7 +53,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ### Infrastructure Stack
 - **Backend**: Python/FastAPI, Redis, cryptographic security utilities
 - **Frontend**: React/TypeScript, Vite, RTK Query for state management with enhanced responsive layouts
-- **Host Platform**: Ubuntu with Docker (AMD64/ARM64 support)
+- **Host Platform**: Ubuntu with Docker (optimized for AMD64)
 - **Inference Engine**: vLLM (primary), Text Generation Inference
 - **Containerization**: Docker Compose orchestration
 - **Build System**: Modern TypeScript/ESLint configuration
@@ -133,15 +133,22 @@ The platform now features advanced load balancing with intelligent node selectio
 ## Deployment Options
 
 ### Docker Hub Integration
-The platform provides pre-built Docker images through automated CI/CD:
+The platform provides pre-built Docker images through automated CI/CD with optimized build processes:
 
-- **Base images**: Available for multiple architectures (AMD64/ARM64)
-- **Version control**: Tagged releases for stable deployments
-- **Automated builds**: Updated with each release
+- **Optimized builds**: Streamlined for AMD64 architecture with reduced disk usage
+- **Enhanced caching**: Improved layer caching for faster deployments
+- **Automated pipelines**: Continuous integration with GitHub Actions
+- **Efficient resource usage**: Optimized Docker image sizes with multi-stage builds
 
-### Supported Architectures
-- Linux AMD64 (x86_64)
-- Linux ARM64 (AArch64)
+### Supported Architecture
+- Linux AMD64 (x86_64) - Primary supported platform with full optimization
+
+### Node Container Optimizations
+The node service features several performance and efficiency improvements:
+- **Streamlined installation**: Combined package installation steps for faster builds
+- **Reduced image size**: No-cache pip installations to minimize storage footprint
+- **Enhanced PyTorch support**: CUDA 12.1 optimized PyTorch installation
+- **Simplified dependencies**: Consolidated dependency management
 
 ## Model Support
 
@@ -231,12 +238,12 @@ For detailed technical specifications, architecture decisions, and development r
 ### Current Implementation
 - FastAPI-based router with Redis backend and enhanced logging
 - React/TypeScript frontend with enhanced responsive design and node URL tracking
-- Docker-based node management with automatic service discovery
+- Optimized Docker-based node management with efficient resource usage
 - Intelligent load balancing with LRU node selection
 - Real-time health monitoring and dynamic routing
 - Model library management with improved user experience
 - OpenAI-compatible API endpoints
-- Multi-architecture Docker support with automated builds
+- Streamlined Docker support with automated CI/CD optimization
 
 ### Future Enhancements
 - Advanced load balancing algorithms with predictive scaling
