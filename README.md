@@ -32,6 +32,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - Transparent earnings and demand analytics
 - Docker-based isolation and security
 - Simple setup via automated script
+- Pre-built Docker images for easy deployment
 
 ### Platform Features
 - Intelligent load balancing with least recently used (LRU) node selection
@@ -39,6 +40,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - Model verification and hardware validation
 - Automated billing and payouts
 - Supply/demand pricing engine
+- Cross-platform Docker support (AMD64/ARM64)
 
 ## Technical Architecture
 
@@ -51,7 +53,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ### Infrastructure Stack
 - **Backend**: Python/FastAPI, Redis, cryptographic security utilities
 - **Frontend**: React/TypeScript, Vite, RTK Query for state management with enhanced responsive layouts
-- **Host Platform**: Ubuntu with Docker
+- **Host Platform**: Ubuntu with Docker (AMD64/ARM64 support)
 - **Inference Engine**: vLLM (primary), Text Generation Inference
 - **Containerization**: Docker Compose orchestration
 - **Build System**: Modern TypeScript/ESLint configuration
@@ -86,6 +88,17 @@ A platform that makes AI processing as simple as getting an API key, with supply
 4. Track completions and model performance
 
 ### For GPU Owners
+
+#### Using Docker Hub (Recommended)
+```bash
+# Pull pre-built image
+docker pull username/node:latest
+
+# Or pull model-specific image
+docker pull username/node:llama-3.1-8b
+```
+
+#### Building from Source
 1. Register host account via API
 2. Run Docker containers using provided scripts
 3. Configure models through web interface
@@ -119,6 +132,20 @@ The platform now features advanced load balancing with intelligent node selectio
 3. Completion requests automatically route to least recently used available node
 4. Node usage timestamps update after successful completions
 5. Failed nodes are automatically excluded from routing
+
+## Deployment Options
+
+### Docker Hub Integration
+The platform provides pre-built Docker images through automated CI/CD:
+
+- **Base images**: Available for multiple architectures (AMD64/ARM64)
+- **Model-specific images**: Optimized for popular models
+- **Version control**: Tagged releases for stable deployments
+- **Automated builds**: Updated with each release
+
+### Supported Architectures
+- Linux AMD64 (x86_64)
+- Linux ARM64 (AArch64)
 
 ## Model Support
 
@@ -213,6 +240,7 @@ For detailed technical specifications, architecture decisions, and development r
 - Real-time health monitoring and dynamic routing
 - Model library management with improved user experience
 - OpenAI-compatible API endpoints
+- Multi-architecture Docker support with automated builds
 
 ### Future Enhancements
 - Advanced load balancing algorithms with predictive scaling
