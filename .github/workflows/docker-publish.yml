@@ -7,10 +7,6 @@ on:
         description: 'Version tag (e.g., v1.0.0, latest)'
         required: false
         default: 'latest'
-      model_tag:
-        description: 'Additional model-specific tag (optional)'
-        required: false
-        default: ''
 
 jobs:
   build-and-publish:
@@ -35,7 +31,6 @@ jobs:
           images: ${{ secrets.DOCKER_HUB_USERNAME }}/node
           tags: |
             type=raw,value=${{ github.event.inputs.version }}
-            type=raw,value=${{ github.event.inputs.model_tag }},enable=${{ github.event.inputs.model_tag != '' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -54,9 +49,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Repository:** ${{ secrets.DOCKER_HUB_USERNAME }}/node" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
-          if [ -n "${{ github.event.inputs.model_tag }}" ]; then
-            echo "**Model Tag:** ${{ github.event.inputs.model_tag }}" >> $GITHUB_STEP_SUMMARY
-          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🚀 Deployment Commands" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
