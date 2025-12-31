@@ -8,7 +8,6 @@ import logging
 from routers.users.me import library
 from routers.users.me import node
 from routers import completion
-from routers import health
 
 # Configure logging
 logging.basicConfig(
@@ -34,7 +33,6 @@ app.add_middleware(
 app.include_router(completion.router)
 app.include_router(library.router)
 app.include_router(node.router)
-app.include_router(health.router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
