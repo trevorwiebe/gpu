@@ -34,7 +34,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - Simple setup via automated script
 
 ### Platform Features
-- Round-robin load balancing
+- Intelligent load balancing with least recently used (LRU) node selection
 - Health monitoring and failover
 - Model verification and hardware validation
 - Automated billing and payouts
@@ -94,7 +94,7 @@ A platform that makes AI processing as simple as getting an API key, with supply
 ## API Endpoints
 
 ### Router Service
-- `POST /completion` - OpenAI-compatible text completion
+- `POST /completion` - OpenAI-compatible text completion with intelligent node routing
 - `GET /health` - System health check
 - `GET /users/me/node` - User node management
 - `GET /users/me/library` - User model library
@@ -104,20 +104,21 @@ A platform that makes AI processing as simple as getting an API key, with supply
 - `GET /info` - Node information and capabilities
 - `POST /setup` - Model setup with automatic URL detection
 
-## Node Management
+## Intelligent Load Balancing
 
-### Dynamic Node Discovery
-The platform now features automatic node URL detection and routing:
-- Each node automatically registers its hostname and port
-- Dynamic network configuration with Docker aliases
-- Automatic port allocation for new nodes
-- Enhanced node management with URL tracking
+### Smart Node Selection
+The platform now features advanced load balancing with intelligent node selection:
+- **Least Recently Used (LRU) selection**: Automatically distributes load across available nodes
+- **Model-aware routing**: Routes requests only to nodes with the requested model loaded and ready
+- **Automatic failover**: Seamlessly handles node failures and model unavailability
+- **Usage tracking**: Maintains node usage timestamps for optimal load distribution
 
-### Node Setup Process
-1. Node generates unique setup token with auto-detected URL
-2. Authentication includes hostname and port registration
-3. Router routes requests to correct node URLs automatically
-4. Support for multiple nodes with unique naming
+### Node Management Process
+1. Node authenticates with unique credentials and auto-detected URL
+2. Router tracks model assignments and node readiness status
+3. Completion requests automatically route to least recently used available node
+4. Node usage timestamps update after successful completions
+5. Failed nodes are automatically excluded from routing
 
 ## Model Support
 
@@ -144,6 +145,9 @@ Starting with popular open-source LLMs:
 
 # Dump Redis data
 ./scripts/dump_redis.sh
+
+# Reset entire environment
+./scripts/reset.sh
 ```
 
 ### Frontend Development
@@ -171,6 +175,7 @@ The platform now offers improved responsive design with:
 - Structured logging format with timestamps and component identification
 - Docker-compatible log output for container orchestration
 - Enhanced debugging capabilities for node-to-router communication
+- Automatic error handling and recovery mechanisms
 
 For detailed technical specifications, architecture decisions, and development roadmap, see [ROADMAP.md](./ROADMAP.md).
 
@@ -204,14 +209,15 @@ For detailed technical specifications, architecture decisions, and development r
 - FastAPI-based router with Redis backend and enhanced logging
 - React/TypeScript frontend with enhanced responsive design and node URL tracking
 - Docker-based node management with automatic service discovery
+- Intelligent load balancing with LRU node selection
 - Real-time health monitoring and dynamic routing
 - Model library management with improved user experience
 - OpenAI-compatible API endpoints
 
 ### Future Enhancements
-- Advanced load balancing algorithms
-- Geographic optimization
-- Enhanced analytics and monitoring
+- Advanced load balancing algorithms with predictive scaling
+- Geographic optimization and edge computing
+- Enhanced analytics and monitoring dashboards
 - Automated scaling and deployment
 - Image generation and other model types
 
