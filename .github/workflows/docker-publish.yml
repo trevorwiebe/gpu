@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Image version tag (e.g., latest, v1.0.0)'
+        description: 'Version tag (e.g., v1.0.0, latest)'
         required: false
         default: 'latest'
       model_tag:
-        description: 'Model-specific tag (e.g., smolllm2-135m, llama-3.1-8b)'
+        description: 'Additional model-specific tag (optional)'
         required: false
         default: ''
 
@@ -34,17 +34,14 @@ jobs:
         with:
           images: ${{ secrets.DOCKER_HUB_USERNAME }}/node
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            ${{ github.event.inputs.model_tag && format('type=raw,value={0}', github.event.inputs.model_tag) || '' }}
+            type=raw,value=${{ github.event.inputs.version }}
+            type=raw,value=${{ github.event.inputs.model_tag }},enable=${{ github.event.inputs.model_tag != '' }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./node
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
