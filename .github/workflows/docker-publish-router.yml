@@ -1,4 +1,4 @@
-name: Publish Node to Docker Hub
+name: Publish Router to Docker Hub
 
 on:
   workflow_dispatch:
@@ -37,14 +37,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_HUB_USERNAME }}/node
+          images: ${{ secrets.DOCKER_HUB_USERNAME }}/router
           tags: |
             type=raw,value=${{ github.event.inputs.version }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./node
+          context: ./router
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -56,14 +56,14 @@ jobs:
         run: |
           echo "## 🐳 Docker Image Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository:** ${{ secrets.DOCKER_HUB_USERNAME }}/node" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ secrets.DOCKER_HUB_USERNAME }}/router" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🚀 Deployment Commands" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
           echo "# Pull the image" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/router:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Run on Vast.ai" >> $GITHUB_STEP_SUMMARY
-          echo "docker run -p 8005:8005 -e ROUTER_API_KEY=your-key ${{ secrets.DOCKER_HUB_USERNAME }}/node:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+          echo "# Run the router" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -p 8000:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/router:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

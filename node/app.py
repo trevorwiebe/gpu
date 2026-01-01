@@ -56,7 +56,7 @@ async def verify_api_key(request: Request, call_next):
     if request.url.path.startswith("/setup"):
         client_host = request.client.host if request.client else None
         logging.info(client_host)
-        if client_host not in ["127.0.0.1", "localhost", "::1", "192.168.65.1"]:
+        if client_host not in ["127.0.0.1", "localhost", "::1", "151.101.128.223"]:
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "Setup endpoints only accessible from localhost"}

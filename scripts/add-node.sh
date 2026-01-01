@@ -20,5 +20,4 @@ docker run -d \
     --network gpu_gpu-net \
     --network-alias "$NODE_NAME" \
     -p $PORT:8005 \
-    -e ROUTER_API_KEY=secure-router-key-123 \
     gpu-node:latest
