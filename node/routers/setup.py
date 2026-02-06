@@ -58,9 +58,13 @@ async def get_setup_info(request: Request):
     setup_token = str(uuid.uuid4())
     node_name = generate_node_name()
 
-    hostname = socket.gethostname()
-    port = int(os.getenv("EXTERNAL_PORT", "8005"))
-    node_url = f"http://{hostname}:{port}"
+    node_url = os.getenv("NODE_PUBLIC_URL")
+    if not node_url:
+        try:
+            with open("/tmp/node_public_url") as f:
+                node_url = f.read().strip()
+        except FileNotFoundError:
+            node_url = f"http://{socket.gethostname()}:{os.getenv('EXTERNAL_PORT', '8005')}"
 
     try:
         client = get_redis_client()

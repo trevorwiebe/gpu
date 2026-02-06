@@ -21,23 +21,9 @@ services:
       - gpu-net
     environment:
       - LOG_LEVEL=INFO
-      - NODE_URL=http://node:8005
       - REDIS_HOST=redis
     depends_on:
-      - node
       - redis
-
-  # Node
-  node:
-    build:
-      context: ./node
-      dockerfile: Dockerfile
-    ports:
-      - "8005:8005"
-    networks:
-      - gpu-net
-    environment:
-      - REDIS_HOST=redis
 
 networks:
   gpu-net:

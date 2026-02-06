@@ -1,7 +1,7 @@
 #!/bin/bash
 
 find_open_port() {
-    local port=8006
+    local port=8001
     while true; do
         if ! lsof -i :$port > /dev/null 2>&1; then
             echo $port
