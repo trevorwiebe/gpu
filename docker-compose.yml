@@ -1,5 +1,15 @@
 
 services:
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - gpu-net
+    volumes:
+      - redis-data:/data
+
   # router
   router:
     build:
@@ -12,8 +22,10 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - NODE_URL=http://node:8005
+      - REDIS_HOST=redis
     depends_on:
       - node
+      - redis
 
   # Node
   node:
@@ -24,7 +36,12 @@ services:
       - "8005:8005"
     networks:
       - gpu-net
+    environment:
+      - REDIS_HOST=redis
 
 networks:
   gpu-net:
     driver: bridge
+
+volumes:
+  redis-data:

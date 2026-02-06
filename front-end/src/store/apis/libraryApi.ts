@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const libraryApi = createApi({
     reducerPath: 'library',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8000'
+        baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
     }),
     tagTypes: ['library'],
     endpoints (build){

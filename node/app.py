@@ -5,8 +5,16 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
+import ipaddress
 import torch #type: ignore
 import uuid
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables from .env.local (for local development)
+# Look for .env.local in the node root directory
+env_path = Path(__file__).parent / '.env.local'
+load_dotenv(env_path)
 
 import routers.setup as setup
 import routers.info as info
@@ -56,7 +64,11 @@ async def verify_api_key(request: Request, call_next):
     if request.url.path.startswith("/setup"):
         client_host = request.client.host if request.client else None
         logging.info(client_host)
-        if client_host not in ["127.0.0.1", "localhost", "::1", "151.101.128.223"]:
+        try:
+            is_private = ipaddress.ip_address(client_host).is_private if client_host else False
+        except ValueError:
+            is_private = False
+        if not is_private:
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "Setup endpoints only accessible from localhost"}

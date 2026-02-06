@@ -24,7 +24,7 @@ async def find_node_with_model(model_name: str) -> dict:
     Raises HTTPException(404) if model not available
     """
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         # Strategy 1: Try to find by model ID (exact match)
         model_data = client.hgetall(f'model:{model_name}')

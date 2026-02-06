@@ -4,6 +4,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables from .env.local (for local development)
+# Look for .env.local in the router root directory
+env_path = Path(__file__).parent.parent / '.env.local'
+load_dotenv(env_path)
 
 from routers.users.me import library
 from routers.users.me import node

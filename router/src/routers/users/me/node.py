@@ -66,7 +66,7 @@ async def get_nodes(userId: str):
 async def authenticate_node(request: AuthenticateNodeRequest):
     """Authenticate a node with a setup token"""
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         # Verify the setup token exists and get the node_id
         node_id = client.get(f'setup_token:{request.setupToken}')

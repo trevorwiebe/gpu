@@ -3,6 +3,7 @@ import redis
 import uuid
 
 from models.library import SetModelRequest
+from utils.redis import get_redis_client
 
 router = APIRouter(
     prefix="/user/me",
@@ -13,7 +14,7 @@ router = APIRouter(
 async def set_model(request: SetModelRequest):
     """Set model in hosting library"""
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         if request.isSet:
             model_uuid = str(uuid.uuid4())
@@ -73,7 +74,7 @@ async def set_model(request: SetModelRequest):
 async def get_library(userId: str):
     """Get the user's library"""
     try:
-        client = redis.Redis(host='host.docker.internal', port=6379, decode_responses=True)
+        client = get_redis_client()
 
         # Get model IDs from the user's set
         model_ids = client.smembers(f'user:{userId}:models')
