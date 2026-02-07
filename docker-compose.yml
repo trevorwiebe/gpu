@@ -25,6 +25,18 @@ services:
     depends_on:
       - redis
 
+  # frontend
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - gpu-net
+    depends_on:
+      - router
+
 networks:
   gpu-net:
     driver: bridge
