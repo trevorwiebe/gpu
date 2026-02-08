@@ -2,12 +2,15 @@ import redis
 import logging
 import os
 from typing import Optional
+from fastapi import HTTPException
 
 def get_redis_client():
     # Use environment variables for flexibility
     # Default to host.docker.internal for Docker, but allow override for local dev
-    host = os.getenv('REDIS_HOST', 'host.docker.internal')
-    port = int(os.getenv('REDIS_PORT', '6379'))
+    host = os.getenv('REDIS_HOST')
+    if not host:
+        raise HTTPException(status_code=500, detail="REDIS_HOST environment variable is not set")
+    port = int(os.getenv('REDIS_PORT'))
     return redis.Redis(host=host, port=port, decode_responses=True)
 
 def update_node_status_in_redis(node_id: str, status: str, model_id: str = "", model_name: str = ""):

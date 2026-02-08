@@ -8,7 +8,7 @@ import logging
 import ipaddress
 import torch #type: ignore
 import uuid
-from dotenv import load_dotenv
+from dotenv import load_dotenv #type: ignore
 from pathlib import Path
 
 # Load environment variables from .env.local (for local development)
