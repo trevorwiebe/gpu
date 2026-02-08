@@ -1,7 +1,6 @@
 import uuid
 import random
 import asyncio
-import socket
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from utils import get_redis_client, is_node_authenticated, get_node_user_id, update_node_status_in_redis
@@ -17,9 +16,6 @@ router = APIRouter(
     prefix="",
     tags=["setup"]
 )
-
-def check_authentication_status():
-    return is_node_authenticated(app.node_id)
     
 # Nature-themed word lists for node names
 NATURE_ADJECTIVES = [
@@ -47,7 +43,7 @@ async def get_setup_info(request: Request):
     Returns authentication status and setup URL if not authenticated
     """
 
-    if check_authentication_status():
+    if is_node_authenticated(app.node_id):
         return {
             "authenticated": True,
             "userId": get_node_user_id(app.node_id),
@@ -55,16 +51,19 @@ async def get_setup_info(request: Request):
             "message": "Node is already authenticated"
         }
 
+    public_ip = os.getenv("PUBLIC_IPADDR")
+    port = os.getenv("EXTERNAL_PORT")
+    router_ip = os.getenv("ROUTER_PUBLIC_IPADDR")
+    if not public_ip:
+        raise HTTPException(status_code=500, detail="PUBLIC_IPADDR environment variable is not set")
+    if not port:
+        raise HTTPException(status_code=500, detail="EXTERNAL_PORT environment variable is not set")
+    if not router_ip:
+        raise HTTPException(status_code=500, detail="ROUTER_PUBLIC_IPADDR environment variable is not set")
+    
     setup_token = str(uuid.uuid4())
     node_name = generate_node_name()
-
-    node_url = os.getenv("NODE_PUBLIC_URL")
-    if not node_url:
-        try:
-            with open("/tmp/node_public_url") as f:
-                node_url = f.read().strip()
-        except FileNotFoundError:
-            node_url = f"http://{socket.gethostname()}:{os.getenv('EXTERNAL_PORT', '8005')}"
+    node_url = f"http://{public_ip}:{port}"
 
     try:
         client = get_redis_client()
@@ -74,7 +73,7 @@ async def get_setup_info(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate setup token: {str(e)}")
 
-    setup_url = f"http://localhost:5173/setup/{setup_token}"
+    setup_url = f"http://{router_ip}/setup/{setup_token}"
     return {"qrCodeData": setup_url}
 
 @router.post("/assign-model")
