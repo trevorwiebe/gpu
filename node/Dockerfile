@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Install application dependencies into the base image's venv
 COPY requirements.txt .
-RUN . /venv/main/bin/activate && pip install --no-cache-dir -r requirements.txt
+RUN /venv/main/bin/pip install --no-cache-dir -r requirements.txt
 
 # Create models directory (models downloaded dynamically)
 RUN mkdir -p /models
