@@ -20,4 +20,7 @@ docker run -d \
     --network gpu_gpu-net \
     --network-alias "$NODE_NAME" \
     -p $PORT:8005 \
+    -e PUBLIC_IPADDR=localhost \
+    -e EXTERNAL_PORT=$PORT \
+    -e ROUTER_PUBLIC_IPADDR=localhost:5173 \
     gpu-node:latest
