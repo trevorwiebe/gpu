@@ -17,23 +17,36 @@ router = APIRouter(
     tags=["setup"]
 )
     
-# Nature-themed word lists for node names
-NATURE_ADJECTIVES = [
-    "mountain", "forest", "ocean", "river", "meadow", "valley",
-    "canyon", "glacier", "coral", "desert", "prairie", "tundra",
-    "alpine", "coastal", "highland", "woodland", "wetland", "volcanic"
+ADJECTIVES = [
+    "digital", "scalable", "distributed", "autonomous", "robust",
+    "intelligent", "adaptive", "optimized", "encrypted", "modular",
+    "innovative", "dynamic", "industrial", "computational", "cyber",
+    "virtual", "cloud-native", "high-performance", "resilient", "agile",
+    "predictive", "networked", "strategic", "advanced", "machine-driven",
+    "data-centric", "systemic", "automated", "next-generation", "efficient",
+    "powerful", "accelerated", "parallel", "integrated", "self-learning",
+    "scalable", "secure", "dominant", "transformative", "analytic",
+    "decentralized", "elastic", "hardened", "intensive", "precision",
+    "synthetic", "quantized", "interconnected"
 ]
 
-NATURE_NOUNS = [
-    "stream", "breeze", "tide", "mist", "bloom", "shadow",
-    "light", "dawn", "dusk", "storm", "rain", "snow",
-    "wind", "wave", "cloud", "thunder", "frost", "ember"
+NOUNS = [
+    "badger", "falcon", "panther", "otter", "raven",
+    "wolf", "lynx", "cobra", "viper", "python",
+    "mongoose", "wolverine", "hyena", "jackal", "leopard",
+    "tiger", "eagle", "hawk", "shark", "orca",
+    "kraken", "dragon", "griffin", "phoenix", "chimera",
+    "beetle", "scarab", "mantis", "spider", "scorpion",
+    "buffalo", "bison", "rhino", "boar", "bear",
+    "moose", "elk", "stallion", "ram", "ox",
+    "gecko", "monitor", "komodo", "crow", "ferret",
+    "weasel", "lemur", "capybara"
 ]
 
 def generate_node_name():
     """Generate a random nature-themed node name"""
-    adjective = random.choice(NATURE_ADJECTIVES)
-    noun = random.choice(NATURE_NOUNS)
+    adjective = random.choice(ADJECTIVES)
+    noun = random.choice(NOUNS)
     return f"{adjective}-{noun}"
 
 @router.get("/setup")
