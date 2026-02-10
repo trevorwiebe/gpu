@@ -16,7 +16,13 @@ COPY *.py .
 COPY models/ ./models/
 COPY routers/ ./routers/
 
-EXPOSE 8005
+RUN apt-get update && apt-get install -y openssh-server && \
+    mkdir -p /run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+RUN printf '[program:sshd]\ncommand=/usr/sbin/sshd -D\nautostart=true\nautorestart=true\n' > /etc/supervisor/conf.d/sshd.conf
+
+EXPOSE 8005 22
 
 # Add uvicorn as a supervisor-managed service (base image uses supervisor)
 RUN printf '[program:uvicorn]\ncommand=/venv/main/bin/uvicorn app:app --host 0.0.0.0 --port 8005\ndirectory=/app\nautostart=true\nautorestart=true\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\nstderr_logfile=/dev/stderr\nstderr_logfile_maxbytes=0\n' > /etc/supervisor/conf.d/uvicorn.conf
